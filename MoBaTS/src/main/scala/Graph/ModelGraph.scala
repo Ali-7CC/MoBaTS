@@ -4,6 +4,7 @@ import DSL.*
 import scala.quoted.*
 import sttp.client3.{RequestT, Identity, Response}
 import scala.util.matching.Regex
+import java.util.regex.Matcher
 
 type Node = Int
 type Edge = (Node, String, Node)
@@ -31,7 +32,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
           type r2
           request($f: RequestT[Identity, Either[`x`, `r2`], Any]): Model[Response[Either[`x`, `r2`]], RequestError]
         } =>
-      val mg: ModelGraph = Set((startNode, requestToLabel[R, E](modelExpr), endNode))
+      val mg: ModelGraph = Set((startNode,  s"${requestToLabel[`x`, `r2`](f)}", endNode))
       (mg, Set(endNode))
 
     case '{
@@ -39,7 +40,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
           type r2
           request($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
         } =>
-      val mg: ModelGraph = Set((startNode, requestToLabel[R, E](modelExpr), endNode))
+      val mg: ModelGraph = Set((startNode, s"${requestToLabel[`x`, `r2`](f)}. Expecting code ${code.valueOrAbort}", endNode))
       (mg, Set(endNode))
 
     case '{
@@ -47,7 +48,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
           type r2
           failedRequest($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
         } =>
-      val mg: ModelGraph = Set((startNode, requestToLabel[R, E](modelExpr), endNode))
+      val mg: ModelGraph = Set((startNode,  s"${requestToLabel[`x`, `r2`](f)}. Expecting code ${code.valueOrAbort}", endNode))
       (mg, Set(endNode))
 
     case '{ rec($recV: String, $e) } =>
@@ -99,29 +100,10 @@ def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using 
   val contExpr: Expr[Model[R, E]] = contTerm.asExprOf[Model[R, E]]
   contExpr
 
-def requestToLabel[R: Type, E: Type](request: Expr[Model[R, E]])(using Quotes): String =
+def requestToLabel[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): String =
   import quotes.reflect.*
   val requestTree: Term = request.asTerm
   requestTree match
-    case Inlined(_, _, Typed(Apply(TypeApply(_, _), List(Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)), Literal(StringConstant(code)))), _)) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Apply(_, List(Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)), Literal(StringConstant(code)))) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Typed(Apply(TypeApply(_, List(_, _)), List(Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), List(_))), Literal(StringConstant(code)))), _) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Inlined(
-          _,
-          _,
-          Inlined(_, _, Inlined(_, _, Typed(Apply(_, List(Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)), Literal(StringConstant(code)))), _)))
-        ) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Inlined(_, _, Typed(Apply(_, List(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), Literal(StringConstant(code)))), _)) => s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Typed(Apply(_, List(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), Literal(StringConstant(code)))), _)                => s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Apply(_, List(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), Literal(StringConstant(code))))                          => s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Inlined(_, _, Inlined(_, _, Inlined(_, _, Typed(Apply(_, List(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _))), _))))  => s"request to ${api}.${endpoint}"
-    case Inlined(_, _, Inlined(_, _, Inlined(_, _, Typed(Apply(_, List(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), Literal(StringConstant(code)))), _)))) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
-    case Inlined(_, _, Inlined(_, _, Apply(_, List(Inlined(_, _, Typed(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), _)))))) => s"request to ${api}.${endpoint}"
-    case Inlined(_, _, Inlined(_, _, Apply(_, List(Inlined(_, _, Typed(Apply(Select(Apply(Select(Ident(api), _), _), endpoint), _), _)), Literal(StringConstant(code)))))) =>
-      s"request to ${api}.${endpoint}. Expecting code ${code}"
+    case Apply(Select(Apply(Select(Ident(api), "apply"), _), endpoint), _) => s"request to ${api}.${endpoint}"
+    case Block(List(ValDef(_,_, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)) => s"request to ${api}.${endpoint}"
     case _ => throw new MatchError("Could not parse request tree:\n" + requestTree.show(using Printer.TreeStructure))
