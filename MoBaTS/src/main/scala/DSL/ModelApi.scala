@@ -28,10 +28,8 @@ inline def assertTrue[R](data: R, inline cond: Boolean): Model[R, AssertionError
 def choose[R](ms: => Model[R, Error]*): Model[R, Error] =
   val models = ms.map(m => () => m)
   Model.Choose(models)
-def rec(model: RecVar => Model[Unit, Error])          = Model.Rec(model)
-def rec(recVar: String, model: => Model[Unit, Error]) = Model.UnsafeRec(recVar, () => model)
-def loop(recVar: RecVar)                              = Model.Loop(recVar)
-def loop(recVar: String)                              = Model.UnsafeLoop(recVar)
+def rec(recVar: String, model: => Model[Unit, Error]) = Model.Rec(recVar, () => model)
+def loop(recVar: String)                              = Model.Loop(recVar)
 def error[R, E](err: => E): Model[R, E]               = Model.Error(() => err)
 def yieldValue[R, E](v: => R): Model[R, E]            = Model.YieldValue(() => v)
 
@@ -40,7 +38,7 @@ def run[R](model: Model[R, Error]): Result[R, Error] =
   val (res, recs, logs)                   = eval(model, Map.empty, backend, 0, Seq.empty)
   res
 
-def debug[R, B](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
+def debug[R, B](model: Model[R, Error]): (Result[R, Error], Map[String, Model[Unit, Error]], Seq[Log]) =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
   eval(model, Map.empty, backend, 0, Seq.empty)
 
@@ -49,7 +47,7 @@ def runT[R, B](model: Model[R, Error]): Result[R, Error] =
   val (res, recs, logs)                   = evalT[R, B](model.asInstanceOf[Model[Any, Error]], Map.empty, backend, 0, Seq.empty, Seq.empty)
   res
 
-def debugT[R, B](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
+def debugT[R, B](model: Model[R, Error]): (Result[R, Error], Map[String, Model[Unit, Error]], Seq[Log]) =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
   evalT[R, B](model.asInstanceOf[Model[Any, Error]], Map.empty, backend, 0, Seq.empty, Seq.empty)
 

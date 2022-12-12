@@ -9,11 +9,11 @@ enum Result[R, E]:
 
 def eval[R, B](
   model: Model[R, Error],
-  recMap: Map[RecVar, Model[Unit, Error]],
+  recMap: Map[String, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
   recCounter: Int,
   logs: Seq[Log]
-): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
+): (Result[R, Error], Map[String, Model[Unit, Error]], Seq[Log]) =
   model match
     // BASE CASES
     case Model.Request(req) =>
@@ -61,9 +61,8 @@ def eval[R, B](
       val newLogs = logs :+ Log.GeneralLog(s"Model number ${die + 1} was chosen")
       eval(ms(die)(), recMap, backend, recCounter, newLogs)
 
-    case Model.Rec(m) =>
-      val recVar     = RecVarImpl(s"rec depth: ${recCounter + 1}")
-      val innerModel = m(recVar)
+    case Model.Rec(recVar, m) =>
+      val innerModel = m()
       val newRecMap  = recMap + (recVar -> innerModel)
       val newLogs    = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
       eval(innerModel, newRecMap, backend, recCounter + 1, newLogs)
@@ -81,12 +80,12 @@ def eval[R, B](
 @scala.annotation.tailrec
 def evalT[R, B](
   model: Model[Any, Error],
-  recMap: Map[RecVar, Model[Unit, Error]],
+  recMap: Map[String, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
   recCounter: Int,
   logs: Seq[Log],
   conts: Seq[Any => Model[Any, Error]]
-): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
+): (Result[R, Error], Map[String, Model[Unit, Error]], Seq[Log]) =
   model match
     // BASE CASES
     case Model.Request(req) =>
@@ -145,12 +144,11 @@ def evalT[R, B](
       val newLogs = logs :+ Log.GeneralLog(s"Model number ${die + 1} was chosen")
       evalT(ms(die)(), recMap, backend, recCounter, newLogs, conts)
 
-    case Model.Rec(m) =>
-      val recVar     = RecVarImpl(s"rec depth: ${recCounter + 1}")
-      val innerModel = m(recVar)
+    case Model.Rec(recVar, m) =>
+      val innerModel = m()
       val newRecMap  = recMap + (recVar -> innerModel)
       val newLogs    = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
-      evalT(innerModel, newRecMap.asInstanceOf[Map[RecVar, Model[Unit, Error]]], backend, recCounter + 1, newLogs, conts)
+      evalT(innerModel, newRecMap.asInstanceOf[Map[String, Model[Unit, Error]]], backend, recCounter + 1, newLogs, conts)
 
     case Model.Loop(recVar) =>
       val m = recMap.get(recVar)
