@@ -8,25 +8,25 @@ enum Result[R, E]:
   case Failure(value: E)
 
 def eval[R, B](
-    model: Model[R, Error],
-    recMap: Map[RecVar, Model[Unit, Error]],
-    backend: SttpBackend[Identity, Any],
-    recCounter: Int,
-    logs: Seq[Log]
+  model: Model[R, Error],
+  recMap: Map[RecVar, Model[Unit, Error]],
+  backend: SttpBackend[Identity, Any],
+  recCounter: Int,
+  logs: Seq[Log]
 ): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request = req(())
-      val newLogs = logs :+ Log.RequestLog(request)
+      val request  = req(())
+      val newLogs  = logs :+ Log.RequestLog(request)
       val response = request.send(backend)
       response.body match
         case Right(_) => (Result.Success(response), recMap, newLogs)
         case Left(x)  => (Result.Failure(RequestError(s"Request failed: ${x}")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
-      val request = f(())
-      val newLogs = logs :+ Log.RequestLog(request)
+      val request  = f(())
+      val newLogs  = logs :+ Log.RequestLog(request)
       val response = request.send(backend)
       response.body match
         case Left(_)  => (Result.Success(response), recMap, newLogs)
@@ -41,7 +41,7 @@ def eval[R, B](
         (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
 
     case Model.YieldValue(v) =>
-      val newLogs = logs :+ Log.GeneralLog(s"End model with value : \"${v()}\"")
+      val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
 
     case Model.Error(v) =>
@@ -56,16 +56,16 @@ def eval[R, B](
         case Result.Failure(err) => (Result.Failure(err), recs, newLogs)
 
     case Model.Choose(ms) =>
-      val length = ms.length
-      val die = Random.nextInt(length)
+      val length  = ms.length
+      val die     = Random.nextInt(length)
       val newLogs = logs :+ Log.GeneralLog(s"Model number ${die + 1} was chosen")
       eval(ms(die)(), recMap, backend, recCounter, newLogs)
 
     case Model.Rec(m) =>
-      val recVar = RecVarImpl(s"rec depth: ${recCounter + 1}")
+      val recVar     = RecVarImpl(s"rec depth: ${recCounter + 1}")
       val innerModel = m(recVar)
-      val newRecMap = recMap + (recVar -> innerModel)
-      val newLogs = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
+      val newRecMap  = recMap + (recVar -> innerModel)
+      val newLogs    = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
       eval(innerModel, newRecMap, backend, recCounter + 1, newLogs)
 
     case Model.Loop(recVar) =>
@@ -80,18 +80,18 @@ def eval[R, B](
 
 @scala.annotation.tailrec
 def evalT[R, B](
-    model: Model[Any, Error],
-    recMap: Map[RecVar, Model[Unit, Error]],
-    backend: SttpBackend[Identity, Any],
-    recCounter: Int,
-    logs: Seq[Log],
-    conts: Seq[Any => Model[Any, Error]]
+  model: Model[Any, Error],
+  recMap: Map[RecVar, Model[Unit, Error]],
+  backend: SttpBackend[Identity, Any],
+  recCounter: Int,
+  logs: Seq[Log],
+  conts: Seq[Any => Model[Any, Error]]
 ): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request = req(())
-      val newLogs = logs :+ Log.RequestLog(request)
+      val request  = req(())
+      val newLogs  = logs :+ Log.RequestLog(request)
       val response = request.send(backend)
       response.body match
         case Right(_) =>
@@ -102,8 +102,8 @@ def evalT[R, B](
         case Left(x) => (Result.Failure(RequestError(s"Request failed: ${x}")), recMap, newLogs)
 
     case Model.FailedRequest(req) =>
-      val request = req(())
-      val newLogs = logs :+ Log.RequestLog(request)
+      val request  = req(())
+      val newLogs  = logs :+ Log.RequestLog(request)
       val response = request.send(backend)
       response.body match
         case Left(_) =>
@@ -125,7 +125,7 @@ def evalT[R, B](
         (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
 
     case Model.YieldValue(v) =>
-      val newLogs = logs :+ Log.GeneralLog(s"End Model with value : \"${v()}\"")
+      val newLogs = logs :+ Log.GeneralLog(s"YieldValue Model with value : \"${v()}\"")
       if (conts.isEmpty)
         (Result.Success(v().asInstanceOf[R]), recMap, newLogs)
       else
@@ -140,16 +140,16 @@ def evalT[R, B](
       evalT(first, recMap, backend, recCounter, logs, cont.asInstanceOf[Any => Model[Any, Error]] +: conts)
 
     case Model.Choose(ms) =>
-      val length = ms.length
-      val die = Random.nextInt(length)
+      val length  = ms.length
+      val die     = Random.nextInt(length)
       val newLogs = logs :+ Log.GeneralLog(s"Model number ${die + 1} was chosen")
       evalT(ms(die)(), recMap, backend, recCounter, newLogs, conts)
 
     case Model.Rec(m) =>
-      val recVar = RecVarImpl(s"rec depth: ${recCounter + 1}")
+      val recVar     = RecVarImpl(s"rec depth: ${recCounter + 1}")
       val innerModel = m(recVar)
-      val newRecMap = recMap + (recVar -> innerModel)
-      val newLogs = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
+      val newRecMap  = recMap + (recVar -> innerModel)
+      val newLogs    = logs :+ Log.RecursionLog(recVar, newRecMap.keySet)
       evalT(innerModel, newRecMap.asInstanceOf[Map[RecVar, Model[Unit, Error]]], backend, recCounter + 1, newLogs, conts)
 
     case Model.Loop(recVar) =>
