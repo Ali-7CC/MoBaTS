@@ -7,7 +7,7 @@ def request[R, X](req: => RequestT[Identity, Either[X, R], Any]): Model[Response
 def request[R, X](req: => RequestT[Identity, Either[X, R], Any], code: String): Model[R, Error] =
   request(req) >> { response =>
     if (response.code.toString == code)
-      end(response.body.asInstanceOf[Right[_, R]].value)
+      yieldValue(response.body.asInstanceOf[Right[_, R]].value)
     else
       error(CodeError(s"Expected code ${code}, got ${response.code.toString}"))
   }
@@ -16,7 +16,7 @@ def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any]): Model[Re
 def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any], code: String): Model[R, Error] =
   failedRequest(req) >> { response =>
     if (response.code.toString == code)
-      end(response.body.asInstanceOf[Left[R, _]].value)
+      yieldValue(response.body.asInstanceOf[Left[R, _]].value)
     else
       error(CodeError(s"Expected code ${code}, got ${response.code.toString}"))
   }
@@ -33,7 +33,7 @@ def rec(recVar: String, model: Model[Unit, Error]) = Model.UnsafeRec(recVar, mod
 def loop(recVar: RecVar) = Model.Loop(recVar)
 def loop(recVar: String) = Model.UnsafeLoop(recVar)
 def error[R, E](err: => E): Model[R, E] = Model.Error(() => err)
-def end[R, E](v: => R): Model[R, E] = Model.End(() => v)
+def yieldValue[R, E](v: => R): Model[R, E] = Model.YieldValue(() => v)
 
 def run[R](model: Model[R, Error]): Result[R, Error] =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()

@@ -40,7 +40,7 @@ def eval[R, B](
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to false")
         (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
 
-    case Model.End(v) =>
+    case Model.YieldValue(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"End model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
 
@@ -124,7 +124,7 @@ def evalT[R, B](
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to false")
         (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
 
-    case Model.End(v) =>
+    case Model.YieldValue(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"End Model with value : \"${v()}\"")
       if (conts.isEmpty)
         (Result.Success(v().asInstanceOf[R]), recMap, newLogs)

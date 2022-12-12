@@ -13,9 +13,7 @@ type ModelGraph = Set[Edge]
 def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R, E]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
   import quotes.reflect.*
   modelExpr match
-    case '{ end($_) } =>
-      val mg: ModelGraph = Set((startNode, "END", endNode))
-      (mg, Set(endNode))
+    case '{ yieldValue($_) } => (Set.empty, Set(startNode))
 
     case '{
           type r2
