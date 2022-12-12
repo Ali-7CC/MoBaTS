@@ -68,6 +68,12 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
       }
       (mg, exitNodes diff Set(startNode))
 
+    case '{
+          val condStr: String = $x; $body(condStr): Model[R, E]
+        } =>
+      val mg: ModelGraph = Set((startNode, s"AssertTrue with condition: ${x.valueOrAbort}", endNode))
+      (mg, Set(endNode))
+
     case _ => throw new MatchError("Could not match expression with structure:\n" + modelExpr.show + "\n And tree:\n" + modelExpr.asTerm.show(using Printer.TreeStructure))
 
 def modelExprSize[R, E](modelExpr: Expr[Model[R, E]])(using Quotes): Int =

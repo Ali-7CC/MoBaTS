@@ -22,13 +22,9 @@ inline def step10       = step9 >> { owner => failedRequest(OwnerApi().deleteOwn
 inline def ownerApiTest = step10
 
 @main def hello: Unit =
-  // inline def addOwner = request(OwnerApi().addOwner(OwnerFields("John", "Doe", "Street 2", "Copenhagen", "60321321")), "201")
-  // inline def listOwners = request(OwnerApi().listOwners(), "200")
-  // inline def addThenGet = addOwner >> { owner => request(OwnerApi().getOwner(owner.id.get), "200") }
-  // inline def addDeleteYield = addOwner >> { owner => request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue(owner) }  }
-
-  // println(mgToGraphviz(toMg(choose(addThenGet, addDeleteYield) >> {_ => listOwners})))
   val output = debug(ownerApiTest)
+  println(mgToGraphviz(toMg(ownerApiTest)))
+
   output match
     case (Result.Success(value), recs, logs) =>
       for log <- logs do
