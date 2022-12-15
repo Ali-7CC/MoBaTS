@@ -58,7 +58,7 @@ inline def toMg[R, E](inline model: Model[R, E]): ModelGraph = modelToGraph[R, E
 
 private def edgeToGraphviz(edge: Edge): String =
   edge match
-    case (s, label, e) => s"${s} -> ${e} [ label = \"${label}\"];"
+    case (s, label, e) => s"${s} -> ${e} [ label = \"${label.replaceAll("\"","")}\"];"
 
 private def edgesToGraphviz(mg: ModelGraph): String =
   mg.toList match

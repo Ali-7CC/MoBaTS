@@ -84,6 +84,15 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
       val mg: ModelGraph = Set((startNode, s"AssertTrue with condition: ${x.valueOrAbort}", endNode))
       (mg, Set(endNode))
 
+    case '{
+          if $cond then $thenBranch else $elseBranch
+        } =>
+      val thenConnector: ModelGraph = Set((startNode, cond.show, endNode))
+      val (thenMg, thenExitNodes): (ModelGraph, Set[Node])  = modelToGraphImpl2(endNode, thenBranch, endNode + 1, recMap)
+      val elseConnector: ModelGraph = Set((startNode, s"!(${cond.show})", thenExitNodes.max + 1))
+      val (elseMg, elseExitNodes): (ModelGraph, Set[Node])  = modelToGraphImpl2(thenExitNodes.max + 1, elseBranch, thenExitNodes.max + 2, recMap)
+      (thenConnector union thenMg union elseConnector union elseMg, thenExitNodes union elseExitNodes)
+
     case _ => throw new MatchError("Could not match expression with structure:\n" + modelExpr.show + "\n And tree:\n" + modelExpr.asTerm.show(using Printer.TreeStructure))
 
 

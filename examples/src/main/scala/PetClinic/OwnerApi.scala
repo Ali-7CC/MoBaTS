@@ -12,13 +12,19 @@ import org.openapitools.client.model._
       rec {x =>
         choose(
           request(OwnerApi().deleteOwner(owner.id.get), "204"),
-          request(OwnerApi().updateOwner(owner.id.get, OwnerFields("updatedName", "updatedLastName", "Updated Address", "Updated City", "12345678")), "204")  >> { _ => loop(x) },
+          request(OwnerApi().updateOwner(owner.id.get, OwnerFields("Jack", "Doe", "Street 4", "Copenhagen", "12345678")), "204")  >> { _ => loop(x) },
           request(OwnerApi().listOwners(), "200") >> {_ => yieldValue(())}
         )} >> 
           { _ => request(OwnerApi().addOwner(OwnerFields("John", "Doe", "Street 2", "Copenhagen", "60321321")), "201") }}
 
   // Graphing the model
-  val mg          = toMg(model)
+  inline def ifModel = model >> { owner => 
+    if owner.firstName == "John" then 
+      request(OwnerApi().updateOwner(owner.id.get, OwnerFields("Jack", "Doe", "Street 4", "Copenhagen", "12345678")), "204")
+    else 
+      request(OwnerApi().deleteOwner(owner.id.get), "204")
+    }
+  val mg          = toMg(ifModel)
   val graphvizStr = mgToGraphvizStr(mg)
   println(s"Graphvis string:\n\n${graphvizStr}")
 
