@@ -49,12 +49,16 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
       val mg: ModelGraph = Set((startNode, s"${requestToLabel[`x`, `r2`](f)}. Expecting code ${code.valueOrAbort}", endNode))
       (mg, Set(endNode))
 
-    case '{ rec($recV: String, $e) } =>
-      val newMap = recMap + (recV.valueOrAbort -> startNode)
-      modelToGraphImpl2(startNode, e, endNode, newMap)
+    case '{ rec($recVarToM: RecVar => Model[Unit, Error]) } =>
+      val (recVarStr, mExpr) = parseRecVarToM(recVarToM)
+      if recMap.contains(recVarStr) then report.errorAndAbort(s"Recursion variable ${recVarStr} is already used. Please use a unique recursion variable.")
+      val newRecMap = recMap + (recVarStr -> startNode)
+      modelToGraphImpl2(startNode, mExpr, endNode, newRecMap)
 
-    case '{ loop($recV: String) } =>
-      val loopNode       = recMap.get(recV.valueOrAbort).get
+
+    case '{ loop($recVar: RecVar) } =>
+      val recVarStr = recVarToStr(recVar)
+      val loopNode       = recMap.get(recVarStr).get
       val mg: ModelGraph = Set((startNode, "", loopNode))
       (mg, Set.empty)
 
@@ -78,6 +82,14 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
 
     case _ => throw new MatchError("Could not match expression with structure:\n" + modelExpr.show + "\n And tree:\n" + modelExpr.asTerm.show(using Printer.TreeStructure))
 
+
+def recVarToStr(recVar: Expr[RecVar])(using Quotes): String = 
+  import quotes.reflect.*
+  val recVarTree = recVar.asTerm
+  recVarTree match
+    case Ident(param) => param
+    case _ => throw new MatchError("Could not parse recursion variable with tree:\n" + recVarTree.show(using Printer.TreeStructure))
+
 def modelExprSize[R, E](modelExpr: Expr[Model[R, E]])(using Quotes): Int =
   val regex: Regex = ".>>".r
   regex.findAllIn(modelExpr.show).size
@@ -86,17 +98,17 @@ def mgMaxNode(mg: ModelGraph): Int = mg match
   case mg if mg.size < 1 => 0
   case _                 => mg.map((a, b, c) => a.max(c)).max
 
-def recToExpr[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): Expr[Model[Unit, E]] =
+def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): (String, Expr[Model[Unit, E]]) =
   import quotes.reflect.*
   val tree: Term = cont.asTerm
-  val contBody = tree match
-    case Block(List(DefDef(_, _, _, Some(block))), _) => block
+  val (param, contBody) = tree match
+    case Block(List(DefDef(_, List(TermParamClause(List(ValDef(param, _, _)))), _, Some(block))), _) => (param, block)
     case _                                            => throw new MatchError("Could not parse continuation block" + tree.show(using Printer.TreeStructure))
   val contTerm = contBody match
     case Block(_, expr) => expr
     case _              => throw new MatchError("Could not parse continuation body" + tree.show(using Printer.TreeStructure))
   val contExpr: Expr[Model[Unit, E]] = contTerm.asExprOf[Model[Unit, E]]
-  contExpr
+  (param, contExpr)
 
 def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using Quotes): Expr[Model[R, E]] =
   import quotes.reflect.*

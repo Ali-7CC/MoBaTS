@@ -21,7 +21,7 @@ def prettyPrintRequest[X, R](request: RequestT[Identity, Either[X, R], Any]): St
 
 enum Log:
   case RequestLog[X, R](request: RequestT[Identity, Either[X, R], Any])
-  case RecursionLog(recVar: String, recVars: Set[String])
+  case RecursionLog(recVar: RecVar, recVars: Set[RecVar])
   case GeneralLog(mgs: String)
   override def toString(): String = this match
     case RequestLog(request)           => prettyPrintRequest(request)

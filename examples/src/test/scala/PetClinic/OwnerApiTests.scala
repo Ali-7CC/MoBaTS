@@ -24,7 +24,7 @@ class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
   }
 
   test("'toMg' should handle recursion") {
-    val result = toMg(rec("X", addThenGet >> { owner => request(OwnerApi().deleteOwner(owner.id.get)) } >> { _ => loop("X") }))
+    val result = toMg(rec {x => addThenGet >> {owner => request(OwnerApi().deleteOwner(owner.id.get))} >> {_ => loop(x)} })
     val expected = Set(
       (0, "request to OwnerApi.addOwner. Expecting code 201", 1),
       (1, "request to OwnerApi.getOwner. Expecting code 200", 2),

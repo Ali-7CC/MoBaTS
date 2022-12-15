@@ -16,8 +16,8 @@ enum Model[+R, +E]:
   case FailedRequest[R, X, E](req: Unit => RequestT[Identity, Either[R, X], Any]) extends Model[Response[Either[R, X]], E]
   case AssertTrue[R, E](data: R, cond: Boolean, condStr: String)                  extends Model[R, E]
   case Choose[R, E](models: Seq[() => Model[R, E]])                               extends Model[R, E]
-  case Rec(recVar: String, model: () => Model[Unit, E])                           extends Model[Unit, E]
-  case Loop(recVar: String)                                                       extends Model[Unit, E]
+  case Rec(recVar: RecVar => Model[Unit, E])                                      extends Model[Unit, E]
+  case Loop(recVar: RecVar)                                                       extends Model[Unit, E]
   case Error[R, E](err: () => E)                                                  extends Model[R, E]
   case YieldValue[R, E](v: () => R)                                               extends Model[R, E]
   def >>[R2, E2 >: E](cont: R => Model[R2, E2]): Model[R2, E2] = Model.Sequence(this, cont)

@@ -28,7 +28,7 @@ import org.openapitools.client.model._
 
 
   inline def branch1(owner: Owner) = request(OwnerApi().deleteOwner(owner.id.get), "204")
-  inline def branch2(owner: Owner) = rec("x", updateOwner(owner) >> {_ => loop("x")})
+  inline def branch2(owner: Owner) = rec  {x =>  updateOwner(owner) >> {_ => loop(x)} }
   inline def branch3 = request(OwnerApi().listOwners(),"200")
 
   inline def model = addOwner >> 
@@ -40,12 +40,14 @@ import org.openapitools.client.model._
         {_ => addOwner} 
     } 
 
-  // println(mgToGraphviz(toMg(model)))
+  println(mgToGraphviz(toMg(model)))
   inline def step1 = request(OwnerApi().addOwner(OwnerFields("John", "Doe", "Street 2", "Copenhagen", "60321321")), "201")
-  inline def step2 = step1 >> { owner => request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner => assertTrue(retrievedOwner, owner == retrievedOwner) } }
-  inline def test = rec("x", step1 >> { owner => print("Heyyy"); if owner.id.get == 1 then loop("x") else yieldValue(())})
+  // inline def step2 = step1 >> { owner => request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner => assertTrue(retrievedOwner, owner == retrievedOwner) } }
+  inline def test = rec { x => step1 >> {_ => rec {y => step1 >> {_ => loop(y)}}} }
+  println(mgToGraphviz(toMg(test)))
 
-    println(mgToGraphviz(toMg(test)))
+
+    // println(mgToGraphviz(toMg(test)))
 
   
 
