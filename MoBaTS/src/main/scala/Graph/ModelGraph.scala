@@ -61,12 +61,14 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
     case '{
           choose(${ Varargs[Model[R, Error]](es) }: _*)
         } =>
-      val sorted                           = es.sortBy(e => modelExprSize(e))
-      val i: Tuple2[ModelGraph, Set[Node]] = (Set.empty, Set(startNode))
-      val (mg, exitNodes) = sorted.foldRight(i) { (expr, acc) =>
-        val res = modelToGraphImpl2(startNode, expr, acc._2.max + 1, recMap); val mg1 = res._1; val mg2 = acc._1; val exitNodes = res._2 union acc._2; ((mg1 union mg2), exitNodes)
+      val i: Tuple2[ModelGraph, Set[Node]] = (Set.empty, Set.empty)
+      val (mg, exitNodes) = es.foldRight(i) { (expr, acc) =>
+        val res       = modelToGraphImpl2(startNode, expr, if acc._1.isEmpty then startNode + 1 else mgMaxNode(acc._1) + 1, recMap);
+        val newMg = res._1 union acc._1
+        val newExitNodes = res._2 union acc._2;
+        (newMg, newExitNodes)
       }
-      (mg, exitNodes diff Set(startNode))
+      (mg, exitNodes)
 
     case '{
           val condStr: String = $x; $body(condStr): Model[R, E]
@@ -79,6 +81,10 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
 def modelExprSize[R, E](modelExpr: Expr[Model[R, E]])(using Quotes): Int =
   val regex: Regex = ".>>".r
   regex.findAllIn(modelExpr.show).size
+
+def mgMaxNode(mg: ModelGraph): Int = mg match
+  case mg if mg.size < 1 => 0
+  case _                 => mg.map((a, b, c) => a.max(c)).max
 
 def recToExpr[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): Expr[Model[Unit, E]] =
   import quotes.reflect.*

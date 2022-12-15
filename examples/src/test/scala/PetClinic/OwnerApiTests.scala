@@ -36,9 +36,9 @@ class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
   test("'toMg' should handle choice (branching)") {
     val result = toMg(choose(addThenGet, listOwners))
     val expected = Set(
-      (0, "request to OwnerApi.listOwners. Expecting code 200", 3),
-      (0, "request to OwnerApi.addOwner. Expecting code 201", 1),
-      (1, "request to OwnerApi.getOwner. Expecting code 200", 2)
+      (0, "request to OwnerApi.addOwner. Expecting code 201", 2),
+      (2, "request to OwnerApi.getOwner. Expecting code 200", 3),
+      (0, "request to OwnerApi.listOwners. Expecting code 200", 1)
     )
     assert(result == expected)
   }
