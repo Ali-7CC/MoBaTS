@@ -13,46 +13,42 @@ class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
 
   test("'toMg' should a simple request") {
     val result   = toMg(addOwner)
-    val expected = Set((0, "request to OwnerApi.addOwner. Expecting code 201", 1))
+    val expected = Set((0, "!OwnerApi.addOwner", 1), (1, "?201", 2))
     assert(result == expected)
   }
 
   test("'toMg' should handle a sequence of requests") {
     val result   = toMg(addThenGet)
-    val expected = Set((0, "request to OwnerApi.addOwner. Expecting code 201", 1), (1, "request to OwnerApi.getOwner. Expecting code 200", 2))
+    val expected = Set((0, "!OwnerApi.addOwner", 1), (1, "?201", 2), (2, "!OwnerApi.getOwner", 3), (3, "?200", 4))
     assert(result == expected)
   }
 
   test("'toMg' should handle recursion") {
-    val result = toMg(rec {x => addThenGet >> {owner => request(OwnerApi().deleteOwner(owner.id.get))} >> {_ => loop(x)} })
-    val expected = Set(
-      (0, "request to OwnerApi.addOwner. Expecting code 201", 1),
-      (1, "request to OwnerApi.getOwner. Expecting code 200", 2),
-      (2, "request to OwnerApi.deleteOwner", 3),
-      (3, "", 0)
-    )
+    val result   = toMg(rec { x => addThenGet >> { owner => request(OwnerApi().deleteOwner(owner.id.get)) } >> { _ => loop(x) } })
+    val expected = Set((2, "?201", 3), (0, "rec(x)", 1), (4, "?200", 5), (5, "!OwnerApi.deleteOwner", 6), (3, "!OwnerApi.getOwner", 4), (1, "!OwnerApi.addOwner", 2), (7, "loop(x)", 1))
     assert(result == expected)
   }
   test("'toMg' should handle choice (branching)") {
-    val result = toMg(choose(addThenGet, listOwners))
-    val expected = Set(
-      (0, "request to OwnerApi.addOwner. Expecting code 201", 2),
-      (2, "request to OwnerApi.getOwner. Expecting code 200", 3),
-      (0, "request to OwnerApi.listOwners. Expecting code 200", 1)
-    )
+    val result   = toMg(choose(addThenGet, listOwners))
+    val expected = Set((5, "?200", 6), (4, "!OwnerApi.getOwner", 5), (0, "!OwnerApi.listOwners", 1), (3, "?201", 4), (0, "!OwnerApi.addOwner", 3), (1, "?200", 2))
     assert(result == expected)
   }
 
   test("'toMg' should handle choice succeeded by sequence ") {
     val result = toMg(choose(addThenGet, addDeleteYield) >> { _ => listOwners })
     val expected = Set(
-      (4, "", 5),
-      (2, "", 5),
-      (0, "request to OwnerApi.addOwner. Expecting code 201", 1),
-      (0, "request to OwnerApi.addOwner. Expecting code 201", 3),
-      (1, "request to OwnerApi.deleteOwner. Expecting code 204", 2),
-      (3, "request to OwnerApi.getOwner. Expecting code 200", 4),
-      (5, "request to OwnerApi.listOwners. Expecting code 200", 6)
+      (6, "!OwnerApi.getOwner", 7),
+      (0, "!OwnerApi.addOwner", 1),
+      (10, "?200", 11),
+      (0, "!OwnerApi.addOwner", 5),
+      (2, "!OwnerApi.deleteOwner", 3),
+      (7, "?200", 8),
+      (9, "!OwnerApi.listOwners", 10),
+      (3, "?204", 4),
+      (4, "", 9),
+      (5, "?201", 6),
+      (8, "", 9),
+      (1, "?201", 2)
     )
     assert(result == expected)
   }

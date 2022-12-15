@@ -30,24 +30,27 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
           type r2
           request($f: RequestT[Identity, Either[`x`, `r2`], Any]): Model[Response[Either[`x`, `r2`]], RequestError]
         } =>
-      val mg: ModelGraph = Set((startNode, s"${requestToLabel[`x`, `r2`](f)}", endNode))
-      (mg, Set(endNode))
+      val (api, endpoint) = parseRequest[`x`, `r2`](f)
+      val mg: ModelGraph = Set((startNode, s"!${api}.${endpoint}", endNode))
+      (mg, Set(endNode + 1))
 
     case '{
           type x
           type r2
           request($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
         } =>
-      val mg: ModelGraph = Set((startNode, s"${requestToLabel[`x`, `r2`](f)}. Expecting code ${code.valueOrAbort}", endNode))
-      (mg, Set(endNode))
+      val (api, endpoint) = parseRequest[`x`, `r2`](f)
+      val mg: ModelGraph = Set((startNode, s"!${api}.${endpoint}", endNode), ((endNode, s"?${code.valueOrAbort}", endNode + 1)))
+      (mg, Set(endNode + 1))
 
     case '{
           type x
           type r2
           failedRequest($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
         } =>
-      val mg: ModelGraph = Set((startNode, s"${requestToLabel[`x`, `r2`](f)}. Expecting code ${code.valueOrAbort}", endNode))
-      (mg, Set(endNode))
+      val (api, endpoint) = parseRequest[`x`, `r2`](f)
+      val mg: ModelGraph = Set((startNode, s"!${api}.${endpoint}", endNode), ((endNode, s"?${code.valueOrAbort}", endNode + 1)))
+      (mg, Set(endNode + 1))
 
     case '{ rec($recVarToM: RecVar => Model[Unit, Error]) } =>
       val (recVarStr, mExpr) = parseRecVarToM(recVarToM)
@@ -123,10 +126,10 @@ def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using 
   val contExpr: Expr[Model[R, E]] = contTerm.asExprOf[Model[R, E]]
   contExpr
 
-def requestToLabel[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): String =
+def parseRequest[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): (String, String) =
   import quotes.reflect.*
   val requestTree: Term = request.asTerm
   requestTree match
-    case Apply(Select(Apply(Select(Ident(api), "apply"), _), endpoint), _)                               => s"request to ${api}.${endpoint}"
-    case Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)) => s"request to ${api}.${endpoint}"
+    case Apply(Select(Apply(Select(Ident(api), "apply"), _), endpoint), _)                               => (api, endpoint)
+    case Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)) => (api, endpoint)
     case _                                                                                               => throw new MatchError("Could not parse request tree:\n" + requestTree.show(using Printer.TreeStructure))
