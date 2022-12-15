@@ -52,14 +52,15 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
     case '{ rec($recVarToM: RecVar => Model[Unit, Error]) } =>
       val (recVarStr, mExpr) = parseRecVarToM(recVarToM)
       if recMap.contains(recVarStr) then report.errorAndAbort(s"Recursion variable ${recVarStr} is already used. Please use a unique recursion variable.")
-      val newRecMap = recMap + (recVarStr -> startNode)
-      modelToGraphImpl2(startNode, mExpr, endNode, newRecMap)
-
+      val mg1 = Set((startNode, s"rec(${recVarStr})", endNode))
+      val newRecMap = recMap + (recVarStr -> (endNode))
+      val (mg2, exitNodes) = modelToGraphImpl2(endNode, mExpr, endNode + 1, newRecMap)
+      (mg1 union mg2, exitNodes)
 
     case '{ loop($recVar: RecVar) } =>
       val recVarStr = recVarToStr(recVar)
       val loopNode       = recMap.get(recVarStr).get
-      val mg: ModelGraph = Set((startNode, "", loopNode))
+      val mg: ModelGraph = Set((startNode, s"loop(${recVarStr})", loopNode))
       (mg, Set.empty)
 
     case '{

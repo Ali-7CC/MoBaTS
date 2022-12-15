@@ -22,7 +22,7 @@ def eval[R, B](
       val response = request.send(backend)
       response.body match
         case Right(_) => (Result.Success(response), recMap, newLogs)
-        case Left(x)  => (Result.Failure(RequestError(s"Request failed: ${x}")), recMap, newLogs)
+        case Left(x)  => (Result.Failure(RequestError(s"Request failed. Request log:\n ${ Log.RequestLog(request)}")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
       val request  = f(())
