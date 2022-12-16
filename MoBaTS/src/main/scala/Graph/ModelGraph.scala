@@ -89,7 +89,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
         } =>
       val thenConnector: ModelGraph = Set((startNode, cond.show, endNode))
       val (thenMg, thenExitNodes): (ModelGraph, Set[Node])  = modelToGraphImpl2(endNode, thenBranch, endNode + 1, recMap)
-      val elseConnector: ModelGraph = Set((startNode, s"!(${cond.show})", thenExitNodes.max + 1))
+      val elseConnector: ModelGraph = Set((startNode, s"¬(${cond.show})", thenExitNodes.max + 1))
       val (elseMg, elseExitNodes): (ModelGraph, Set[Node])  = modelToGraphImpl2(thenExitNodes.max + 1, elseBranch, thenExitNodes.max + 2, recMap)
       (thenConnector union thenMg union elseConnector union elseMg, thenExitNodes union elseExitNodes)
 
