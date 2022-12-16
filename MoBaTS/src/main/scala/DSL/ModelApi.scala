@@ -22,7 +22,7 @@ def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any], code: Str
   }
 
 inline def assertTrue[R](data: R, inline cond: Boolean): Model[R, AssertionError] = {
-  val condStr = inspect(cond)
+  val condStr = booleanToString(cond)
   Model.AssertTrue(data, cond, condStr)
 }
 def choose[R](ms: => Model[R, Error]*): Model[R, Error] =

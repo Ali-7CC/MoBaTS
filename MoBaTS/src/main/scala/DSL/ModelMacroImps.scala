@@ -2,8 +2,9 @@ package DSL
 
 import scala.quoted.*
 
-def inspectCode(x: Expr[Any])(using Quotes): Expr[String] =
-  Expr(x.show)
+def booleanToStringImpl(x: Expr[Any])(using Quotes): Expr[String] =
+  import quotes.reflect.*
+  Expr(x.asTerm.show(using Printer.TreeShortCode))
 
 def modelPrinterImpl[R: Type, E: Type](modelExpr: Expr[Model[R, E]])(using Quotes): Expr[String] =
   import quotes.reflect.*
