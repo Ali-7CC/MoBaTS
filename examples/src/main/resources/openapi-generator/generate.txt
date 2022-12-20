@@ -1,0 +1,4 @@
+java -jar openapi-generator-cli.jar generate \
+  -i petclinic.yml \
+  --generator-name scala-sttp \
+  -o ../../../../petclinic-client
