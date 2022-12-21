@@ -22,7 +22,7 @@ def eval[R, B](
       val response = request.send(backend)
       response.body match
         case Right(_) => (Result.Success(response), recMap, newLogs)
-        case Left(x)  => (Result.Failure(RequestError(s"Request failed. Request log:\n ${ Log.RequestLog(request)}")), recMap, newLogs)
+        case Left(x)  => (Result.Failure(RequestError(s"Request failed. Request log:\n ${Log.RequestLog(request)}")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
       val request  = f(())
@@ -43,6 +43,10 @@ def eval[R, B](
     case Model.YieldValue(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
+
+    case Model.EndLoop() =>
+      val newLogs = logs :+ Log.GeneralLog("EndLoop (Model[Unit, E])")
+      (Result.Success(()), recMap, newLogs)
 
     case Model.Error(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error model with value : \"${v()}\"")
@@ -99,7 +103,7 @@ def evalT[R, B](
             (Result.Success(response.asInstanceOf[R]), recMap, newLogs)
           else
             evalT(conts(0)(response), recMap, backend, recCounter, newLogs, conts.drop(1))
-        case Left(x) => (Result.Failure(RequestError(s"Request failed: ${x}")), recMap, newLogs)
+        case Left(x) => (Result.Failure(RequestError(s"Request failed: ${x}\n ${Log.RequestLog(request)}")), recMap, newLogs)
 
     case Model.FailedRequest(req) =>
       val request  = req(())
@@ -130,6 +134,10 @@ def evalT[R, B](
         (Result.Success(v().asInstanceOf[R]), recMap, newLogs)
       else
         evalT(conts(0)(v()), recMap, backend, recCounter, newLogs, conts.drop(1))
+
+    case Model.EndLoop() =>
+      val newLogs = logs :+ Log.GeneralLog("EndLoop (Model[Unit, E])")
+      (Result.Success(().asInstanceOf[R]), recMap, newLogs)
 
     case Model.Error(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error Model with value : \"${v()}\"")
