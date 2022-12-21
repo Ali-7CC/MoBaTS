@@ -20,11 +20,10 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
           ($model: Model[`r2`, E]) >> ($cont: `r2` => Model[R, E])
         } =>
       val (firstMg, firstExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(startNode, model, endNode, recMap)
-      println("First exit: " + firstExitNodes)
-      val contEntryNode: Node                              = if (firstExitNodes.size <= 1) then firstExitNodes.max else mgMaxNode(firstMg) + 1
-      val contEndNode: Node                                = if (firstExitNodes.size <= 1) then mgMaxNode(firstMg) + 1 else contEntryNode + 1
-      val connectors: ModelGraph                           = if (firstExitNodes.size <= 1) then Set.empty else firstExitNodes.map(n => (n, "", mgMaxNode(firstMg) + 1))
-      val (contMg, contExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2[R, E](contEntryNode, contToExpr[`r2`, R, E](cont), contEndNode, recMap)
+      val contEntryNode: Node                                = if (firstExitNodes.size <= 1) then firstExitNodes.max else mgMaxNode(firstMg) + 1
+      val contEndNode: Node                                  = if (firstExitNodes.size <= 1) then mgMaxNode(firstMg) + 1 else contEntryNode + 1
+      val connectors: ModelGraph                             = if (firstExitNodes.size <= 1) then Set.empty else firstExitNodes.map(n => (n, "", mgMaxNode(firstMg) + 1))
+      val (contMg, contExitNodes): (ModelGraph, Set[Node])   = modelToGraphImpl2[R, E](contEntryNode, contToExpr[`r2`, R, E](cont), contEndNode, recMap)
       (firstMg union connectors union contMg, contExitNodes)
 
     case '{
@@ -94,7 +93,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
       val thenConnector: ModelGraph                        = Set((startNode, cond.show, endNode))
       val (thenMg, thenExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(endNode, thenBranch, endNode + 1, recMap)
       val elseConnector: ModelGraph                        = Set((startNode, s"¬(${cond.show})", mgMaxNode(thenMg) + 1))
-      val (elseMg, elseExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(mgMaxNode(thenMg) + 1, elseBranch, mgMaxNode(thenMg)  + 2, recMap)
+      val (elseMg, elseExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(mgMaxNode(thenMg) + 1, elseBranch, mgMaxNode(thenMg) + 2, recMap)
       (thenConnector union thenMg union elseConnector union elseMg, thenExitNodes union elseExitNodes)
 
     case _ => throw new MatchError("Could not match expression with structure:\n" + modelExpr.show + "\n And tree:\n" + modelExpr.asTerm.show(using Printer.TreeStructure))
