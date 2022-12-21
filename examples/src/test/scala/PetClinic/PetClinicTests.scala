@@ -4,7 +4,7 @@ import DSL.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 
-class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
+class PetClinicTests extends AnyFunSuite with BeforeAndAfter:
 
   inline def addOwner       = request(OwnerApi().addOwner(OwnerFields("John", "Doe", "Street 2", "Copenhagen", "60321321")), "201")
   inline def listOwners     = request(OwnerApi().listOwners(), "200")
@@ -25,7 +25,7 @@ class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
 
   test("'toMg' should handle recursion") {
     val result   = toMg(rec { x => addThenGet >> { owner => request(OwnerApi().deleteOwner(owner.id.get)) } >> { _ => loop(x) } })
-    val expected = Set((2, "?201", 3), (0, "rec(x)", 1), (4, "?200", 5), (5, "!OwnerApi.deleteOwner", 6), (3, "!OwnerApi.getOwner", 4), (1, "!OwnerApi.addOwner", 2), (7, "loop(x)", 1))
+    val expected =  Set((6, "loop(x)", 1), (2, "?201", 3), (0, "rec(x)", 1), (4, "?200", 5), (1, "!OwnerApi.addOwner", 2), (5, "!OwnerApi.deleteOwner", 6), (3, "!OwnerApi.getOwner", 4))
     assert(result == expected)
   }
   test("'toMg' should handle choice (branching)") {
@@ -53,4 +53,4 @@ class OwnerApiTests extends AnyFunSuite with BeforeAndAfter:
     assert(result == expected)
   }
 
-end OwnerApiTests
+end PetClinicTests
