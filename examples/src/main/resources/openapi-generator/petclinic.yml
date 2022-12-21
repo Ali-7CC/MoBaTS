@@ -206,12 +206,10 @@ paths:
               $ref: '#/components/schemas/OwnerFields'
         required: true
       responses:
-        200:
+        204:
           description: Update successful.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Owner'
+        default:
+          description: default description
         400:
           description: Bad request.
           content:
@@ -248,17 +246,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Owner details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Owner'
+        204:
+          description: Update successful.
+        default:
+          description: default description
         304:
           description: Not modified.
           headers:
@@ -432,6 +423,8 @@ paths:
       responses:
         204:
           description: Update successful.
+        default:
+          description: default description
         400:
           description: Bad request.
           content:
@@ -922,17 +915,10 @@ paths:
               $ref: '#/components/schemas/Pet'
         required: true
       responses:
-        200:
-          description: Pet details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
+        204:
+          description: Update successful.
+        default:
+          description: default description
         304:
           description: Not modified.
           headers:
@@ -975,17 +961,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Pet details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Pet'
+        204:
+          description: Update successful.
+        default:
+          description: default description
         304:
           description: Not modified.
           headers:

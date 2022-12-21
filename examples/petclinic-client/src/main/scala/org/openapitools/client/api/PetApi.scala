@@ -73,24 +73,23 @@ class PetApi(baseUrl: String) {
    * Returns the pet or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Pet (Pet details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (default description)
    * 
    * @param petId The ID of the pet.
    */
   def deletePet(petId: Int
-): Request[Either[ResponseException[String, Exception], Pet], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.DELETE, uri"$baseUrl/pets/${petId}")
       .contentType("application/json")
-      .response(asJson[Pet])
+      .response(asEither(asString, ignore))
 
   /**
    * Returns the pet or a 404 error.
@@ -166,42 +165,42 @@ class PetApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found for this owner.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (default description)
    * 
    * @param ownerId The ID of the pet owner.
    * @param petId The ID of the pet.
    * @param petFields The pet details to use for the update.
    */
   def updateOwnersPet(ownerId: Int, petId: Int, petFields: PetFields
-): Request[Either[ResponseException[String, Exception], Unit], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.PUT, uri"$baseUrl/owners/${ownerId}/pets/${petId}")
       .contentType("application/json")
       .body(petFields)
-      .response(asJson[Unit])
+      .response(asEither(asString, ignore))
 
   /**
    * Returns the pet or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Pet (Pet details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (default description)
    * 
    * @param petId The ID of the pet.
    * @param pet The pet
    */
   def updatePet(petId: Int, pet: Pet
-): Request[Either[ResponseException[String, Exception], Pet], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.PUT, uri"$baseUrl/pets/${petId}")
       .contentType("application/json")
       .body(pet)
-      .response(asJson[Pet])
+      .response(asEither(asString, ignore))
 
 }
