@@ -84,7 +84,7 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
     case '{
           val condStr: String = $x; $body(condStr): Model[R, E]
         } =>
-      val mg: ModelGraph = Set((startNode, s"AssertTrue with condition: ${x.valueOrAbort}", endNode))
+      val mg: ModelGraph = Set((startNode, s"AssertTrue: ${x.valueOrAbort}", endNode))
       (mg, Set(endNode))
 
     case '{
