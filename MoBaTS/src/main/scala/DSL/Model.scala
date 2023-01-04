@@ -1,14 +1,11 @@
 package DSL
-import Graph.*
+
 import sttp.client3.{RequestT, Identity, Response}
 
-sealed abstract class RecVar
-private case class RecVarImpl(name: String) extends RecVar
-
 /**
- * R: The desired data/return type that results from interpreting the model E:
- * Error type (e.g. ResponseError, CodeError, etc..) X: Response exceptions
- * (from the sttp library)
+ * R: The desired data/return type that results from interpreting the model
+ * E: Error type (e.g. RequestError, CodeError, etc..) 
+ * X: Response exceptions (from the sttp library)
  */
 enum Model[+R, +E]:
   case Sequence[R2, R, E](firstModel: Model[R2, E], cont: R2 => Model[R, E])      extends Model[R, E]
@@ -22,3 +19,6 @@ enum Model[+R, +E]:
   case Error[R, E](err: () => E)                                                  extends Model[R, E]
   case YieldValue[R, E](v: () => R)                                               extends Model[R, E]
   def >>[R2, E2 >: E](cont: R => Model[R2, E2]): Model[R2, E2] = Model.Sequence(this, cont)
+
+sealed abstract class RecVar
+private case class RecVarImpl(name: String) extends RecVar

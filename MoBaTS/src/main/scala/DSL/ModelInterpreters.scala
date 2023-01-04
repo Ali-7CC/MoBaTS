@@ -7,7 +7,7 @@ enum Result[R, E]:
   case Success(value: R)
   case Failure(value: E)
 
-def eval[R, B](
+private def eval[R, B](
   model: Model[R, Error],
   recMap: Map[RecVar, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
@@ -18,19 +18,21 @@ def eval[R, B](
     // BASE CASES
     case Model.Request(req) =>
       val request  = req(())
-      val newLogs  = logs :+ Log.RequestLog(request)
+      val requestLog = Log.RequestLog(request)
+      val newLogs  = logs :+ requestLog
       val response = request.send(backend)
       response.body match
         case Right(_) => (Result.Success(response), recMap, newLogs)
-        case Left(x)  => (Result.Failure(RequestError(s"Request failed. Request log:\n ${Log.RequestLog(request)}")), recMap, newLogs)
+        case Left(x)  => (Result.Failure(RequestError(s"Request failed with exception: ${x}.\n ${requestLog}")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
       val request  = f(())
-      val newLogs  = logs :+ Log.RequestLog(request)
+      val requestLog = Log.RequestLog(request)
+      val newLogs  = logs :+ requestLog
       val response = request.send(backend)
       response.body match
         case Left(_)  => (Result.Success(response), recMap, newLogs)
-        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't")), recMap, newLogs)
+        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't\n ${requestLog}")), recMap, newLogs)
 
     case Model.AssertTrue(m, cond, condStr) =>
       if cond then
@@ -45,7 +47,7 @@ def eval[R, B](
       (Result.Success(v()), recMap, newLogs)
 
     case Model.EndLoop() =>
-      val newLogs = logs :+ Log.GeneralLog("EndLoop (Model[Unit, E])")
+      val newLogs = logs :+ Log.GeneralLog("EndLoop (recursion exited])")
       (Result.Success(()), recMap, newLogs)
 
     case Model.Error(v) =>
@@ -80,10 +82,10 @@ def eval[R, B](
           eval(m, recMap, backend, recCounter, newLogs)
         case None =>
           val newLogs = logs :+ Log.GeneralLog(s"Could not loop back to model with recVar: \"${recVar}\"")
-          (Result.Failure(GeneralError(s"Something went wrong")), recMap, newLogs)
+          (Result.Failure(GeneralError(s"Internal error. See logs for more details.")), recMap, newLogs)
 
 @scala.annotation.tailrec
-def evalT[R, B](
+private def evalT[R, B](
   model: Model[Any, Error],
   recMap: Map[RecVar, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
@@ -95,7 +97,8 @@ def evalT[R, B](
     // BASE CASES
     case Model.Request(req) =>
       val request  = req(())
-      val newLogs  = logs :+ Log.RequestLog(request)
+      val requestLog = Log.RequestLog(request)
+      val newLogs  = logs :+ requestLog
       val response = request.send(backend)
       response.body match
         case Right(_) =>
@@ -103,11 +106,12 @@ def evalT[R, B](
             (Result.Success(response.asInstanceOf[R]), recMap, newLogs)
           else
             evalT(conts(0)(response), recMap, backend, recCounter, newLogs, conts.drop(1))
-        case Left(x) => (Result.Failure(RequestError(s"Request failed: ${x}\n ${Log.RequestLog(request)}")), recMap, newLogs)
+        case Left(x) => (Result.Failure(RequestError(s"Request failed with exception: ${x}.\n ${requestLog}")), recMap, newLogs)
 
     case Model.FailedRequest(req) =>
       val request  = req(())
-      val newLogs  = logs :+ Log.RequestLog(request)
+      val requestLog = Log.RequestLog(request)
+      val newLogs  = logs :+ requestLog
       val response = request.send(backend)
       response.body match
         case Left(_) =>
@@ -115,7 +119,7 @@ def evalT[R, B](
             (Result.Success(response.asInstanceOf[R]), recMap, newLogs)
           else
             evalT(conts(0)(response), recMap, backend, recCounter, newLogs, conts.drop(1))
-        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't")), recMap, newLogs)
+        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't\n ${requestLog}")), recMap, newLogs)
 
     case Model.AssertTrue(m, cond, condStr) =>
       if (cond)
@@ -136,7 +140,7 @@ def evalT[R, B](
         evalT(conts(0)(v()), recMap, backend, recCounter, newLogs, conts.drop(1))
 
     case Model.EndLoop() =>
-      val newLogs = logs :+ Log.GeneralLog("EndLoop (Model[Unit, E])")
+      val newLogs = logs :+ Log.GeneralLog("EndLoop (recursion exited])")
       (Result.Success(().asInstanceOf[R]), recMap, newLogs)
 
     case Model.Error(v) =>
@@ -168,4 +172,4 @@ def evalT[R, B](
           evalT(m, recMap, backend, recCounter, newLogs, conts)
         case None =>
           val newLogs = logs :+ Log.GeneralLog(s"Could not loop back to model with recVar: \"${recVar}\"")
-          (Result.Failure(GeneralError(s"Something went wrong")), recMap, newLogs)
+          (Result.Failure(GeneralError(s"Internal error. See logs for more details.")), recMap, newLogs)

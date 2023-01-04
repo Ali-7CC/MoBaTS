@@ -1,6 +1,6 @@
 package DSL
 
-import Graph._
+import Graph.*
 import sttp.client3.{RequestT, Identity, Response, SttpBackend, HttpURLConnectionBackend}
 
 def request[R, X](req: => RequestT[Identity, Either[X, R], Any]): Model[Response[Either[X, R]], RequestError] = Model.Request(_ => req)
@@ -25,9 +25,11 @@ inline def assertTrue[R](data: R, inline cond: Boolean): Model[R, AssertionError
   val condStr = booleanToString(cond)
   Model.AssertTrue(data, cond, condStr)
 }
+
 def choose[R](ms: => Model[R, Error]*): Model[R, Error] =
   val models = ms.map(m => () => m)
   Model.Choose(models)
+
 def rec(recVarToM: RecVar => Model[Unit, Error]) = Model.Rec(recVarToM)
 def loop(recVar: RecVar)                         = Model.Loop(recVar)
 def endLoop()                                    = Model.EndLoop()

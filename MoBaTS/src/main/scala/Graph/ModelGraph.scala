@@ -4,13 +4,18 @@ import DSL.*
 import scala.quoted.*
 import sttp.client3.{RequestT, Identity, Response}
 import scala.util.matching.Regex
-import java.util.regex.Matcher
 
 type Node       = Int
 type Edge       = (Node, String, Node)
 type ModelGraph = Set[Edge]
 
-def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R, E]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
+inline def modelToGraph[R, E](inline model: Model[R, E]): ModelGraph = ${ modelToGraphImpl[R, E]('{ model }) }
+
+private def modelToGraphImpl[R: Type, E: Type](modelExpr: Expr[Model[R, E]])(using Quotes): Expr[ModelGraph] =
+  val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R, E](0, modelExpr, 1, Map.empty)
+  Expr(res._1)
+
+private def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R, E]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
   import quotes.reflect.*
   modelExpr match
     case '{ yieldValue($_) } => (Set.empty, Set(startNode))
@@ -98,22 +103,18 @@ def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R
 
     case _ => throw new MatchError("Could not match expression with structure:\n" + modelExpr.show + "\n And tree:\n" + modelExpr.asTerm.show(using Printer.TreeStructure))
 
-def recVarToStr(recVar: Expr[RecVar])(using Quotes): String =
+private def recVarToStr(recVar: Expr[RecVar])(using Quotes): String =
   import quotes.reflect.*
   val recVarTree = recVar.asTerm
   recVarTree match
     case Ident(param) => param
     case _            => throw new MatchError("Could not parse recursion variable with tree:\n" + recVarTree.show(using Printer.TreeStructure))
 
-def modelExprSize[R, E](modelExpr: Expr[Model[R, E]])(using Quotes): Int =
-  val regex: Regex = ".>>".r
-  regex.findAllIn(modelExpr.show).size
-
-def mgMaxNode(mg: ModelGraph): Int = mg match
+private def mgMaxNode(mg: ModelGraph): Int = mg match
   case mg if mg.size < 1 => 0
   case _                 => mg.map((a, b, c) => a.max(c)).max
 
-def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): (String, Expr[Model[Unit, E]]) =
+private def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): (String, Expr[Model[Unit, E]]) =
   import quotes.reflect.*
   val tree: Term = cont.asTerm
   val (param, contBody) = tree match
@@ -125,7 +126,7 @@ def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes):
   val contExpr: Expr[Model[Unit, E]] = contTerm.asExprOf[Model[Unit, E]]
   (param, contExpr)
 
-def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using Quotes): Expr[Model[R, E]] =
+private def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using Quotes): Expr[Model[R, E]] =
   import quotes.reflect.*
   val tree: Term = cont.asTerm
   val contBody = tree match
@@ -137,7 +138,7 @@ def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using 
   val contExpr: Expr[Model[R, E]] = contTerm.asExprOf[Model[R, E]]
   contExpr
 
-def parseRequest[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): (String, String) =
+private def parseRequest[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): (String, String) =
   import quotes.reflect.*
   val requestTree: Term = request.asTerm
   requestTree match
