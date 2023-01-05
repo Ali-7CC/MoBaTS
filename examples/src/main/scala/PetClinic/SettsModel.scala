@@ -30,6 +30,7 @@ inline def ownerApiTest(x: RecVar) =
                     failedRequest(OwnerApi().updateOwner(owner.id.get, ownerFields1), "404") >> { _ =>
                       failedRequest(OwnerApi().deleteOwner(owner.id.get), "404") >> { _ => loop(x) }}}}}}}}}}}
 
+
 inline def petApiTest(x: RecVar) =
   request(PetApi().listPets(), "200") >> { pets =>
     choose(
@@ -68,6 +69,7 @@ inline def petApiTest(x: RecVar) =
           assertTrue(retrievedVisit, retrievedVisit == visit) >> { _ => loop(x) }}})}
 
 
+
 inline def vetApiTest(x: RecVar) = 
     request(VetApi().addVet(vet1), "201") >> { vet =>
         choose(
@@ -83,6 +85,7 @@ inline def vetApiTest(x: RecVar) =
                         failedRequest(VetApi().updateVet(vet.id, vet2), "404") >> { _ =>
                         failedRequest(VetsApi().deleteVet(vet.id), "404") >> { _ => loop(x) }}}}}}}})}
 
+
 inline def petTypeApiTest(x: RecVar) =
   request(PettypesApi().addPetType(petType1), "201") >> { petType =>
     request(PettypesApi().listPetTypes(), "200") >> { petTypes =>
@@ -93,6 +96,7 @@ inline def petTypeApiTest(x: RecVar) =
               failedRequest(PettypesApi().getPetType(petType.id), "404") >> { _ =>
                 failedRequest(PettypesApi().updatePetType(petType.id, petType2), "404") >> { _ =>
                   failedRequest(PettypesApi().deletePetType(petType.id), "404") >> { _ => loop(x) }}}}}}}}}
+
 
 inline def specialtyApiTest(x: RecVar) =
   request(SpecialtyApi().addSpecialty(specialty1), "201") >> { specialty =>
