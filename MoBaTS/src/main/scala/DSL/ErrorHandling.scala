@@ -1,14 +1,15 @@
 package DSL
 
-import Console.{RESET, UNDERLINED}
+import Console.{RESET, UNDERLINED, RED}
 import sttp.client3.{RequestT, Identity}
+import scala.compiletime.ops.boolean
 
 enum Log:
-  case RequestLog[X, R](request: RequestT[Identity, Either[X, R], Any])
+  case RequestLog[X, R](request: RequestT[Identity, Either[X, R], Any], color: String = "")
   case RecursionLog(recVar: RecVar, recVars: Set[RecVar])
   case GeneralLog(mgs: String)
   override def toString(): String = this match
-    case RequestLog(request)           => prettyPrintRequest(request)
+    case RequestLog(request, color)    => prettyPrintRequest(request, color)
     case RecursionLog(recVar, recVars) => s"Recursion variable ID: ${recVars}\nCurrent variable set: ${recVars}"
     case GeneralLog(msg)               => msg
 
@@ -18,11 +19,12 @@ case class CodeError(msg: String)      extends Error(msg: String)
 case class AssertionError(msg: String) extends Error(msg: String)
 case class GeneralError(msg: String)   extends Error(msg: String)
 
-private def underlineString(str: String): String = s"${RESET}${UNDERLINED}${str}${RESET}"
-private def prettyPrintRequest[X, R](request: RequestT[Identity, Either[X, R], Any]): String =
-  "Request Log:\n  " +
-    s"${underlineString("Method")}: ${request.method}\n  " +
-    s"${underlineString("URI")}: ${request.uri}\n  " +
-    s"${underlineString("Headers")}: ${request.headers}\n  " +
-    s"${underlineString("Body")}: ${request.body}\n  " +
-    s"${underlineString("curl command")}: ${request.toCurl}"
+private def underlineString(str: String, color: String = ""): String = s"${RESET}${color}${UNDERLINED}${str}${RESET}"
+
+private def prettyPrintRequest[X, R](request: RequestT[Identity, Either[X, R], Any], color: String): String =
+  s"${color}Request Log${RESET}:\n  " +
+    s"${underlineString("Method", color)}: ${color}${request.method.toString()}${RESET}\n  " +
+    s"${underlineString("URI", color)}: ${color}${request.uri}${RESET}\n  " +
+    s"${underlineString("Headers", color)}: ${color}${request.headers}${RESET}\n  " +
+    s"${underlineString("Body", color)}: ${color}${request.body}${RESET}\n  " +
+    s"${underlineString("curl command", color)}: ${color}${request.toCurl}${RESET}"

@@ -2,6 +2,7 @@ package DSL
 
 import Graph.*
 import sttp.client3.{RequestT, Identity, Response, SttpBackend, HttpURLConnectionBackend}
+import Console.{RED, RESET}
 
 def request[R, X](req: => RequestT[Identity, Either[X, R], Any]): Model[Response[Either[X, R]], RequestError] = Model.Request(_ => req)
 def request[R, X](req: => RequestT[Identity, Either[X, R], Any], code: String): Model[R, Error] =
@@ -9,7 +10,7 @@ def request[R, X](req: => RequestT[Identity, Either[X, R], Any], code: String): 
     if (response.code.toString == code)
       yieldValue(response.body.asInstanceOf[Right[_, R]].value)
     else
-      error(CodeError(s"Expected code ${code}, got ${response.code.toString}"))
+      error(CodeError(s"${RED}Expected code ${code}, got ${response.code.toString}${RESET}"))
   }
 
 def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any]): Model[Response[Either[R, X]], RequestError] = Model.FailedRequest(_ => req)
@@ -18,7 +19,7 @@ def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any], code: Str
     if (response.code.toString == code)
       yieldValue(response.body.asInstanceOf[Left[R, _]].value)
     else
-      error(CodeError(s"Expected code ${code}, got ${response.code.toString}"))
+      error(CodeError(s"${RED}Expected code ${code}, got ${response.code.toString}${RESET}"))
   }
 
 inline def assertTrue[R](data: R, inline cond: Boolean): Model[R, AssertionError] = {

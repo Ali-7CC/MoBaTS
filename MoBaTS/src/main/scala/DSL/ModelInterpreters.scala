@@ -2,6 +2,7 @@ package DSL
 
 import sttp.client3.{RequestT, Identity, Response, SttpBackend, HttpURLConnectionBackend}
 import scala.util.Random
+import Console.{RED, RESET}
 
 enum Result[R, E]:
   case Success(value: R)
@@ -17,22 +18,22 @@ private def eval[R, B](
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request  = req(())
+      val request    = req(())
       val requestLog = Log.RequestLog(request)
-      val newLogs  = logs :+ requestLog
-      val response = request.send(backend)
+      val newLogs    = logs :+ requestLog
+      val response   = request.send(backend)
       response.body match
         case Right(_) => (Result.Success(response), recMap, newLogs)
-        case Left(x)  => (Result.Failure(RequestError(s"Request failed with exception: ${x}.\n ${requestLog}")), recMap, newLogs)
+        case Left(x)  => (Result.Failure(RequestError(s"${RED}Request failed with exception: ${x}.${RESET}\n ${Log.RequestLog(request, RED)}\n")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
-      val request  = f(())
+      val request    = f(())
       val requestLog = Log.RequestLog(request)
-      val newLogs  = logs :+ requestLog
-      val response = request.send(backend)
+      val newLogs    = logs :+ requestLog
+      val response   = request.send(backend)
       response.body match
         case Left(_)  => (Result.Success(response), recMap, newLogs)
-        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't\n ${requestLog}")), recMap, newLogs)
+        case Right(_) => (Result.Failure(RequestError(s"${RED}Request was expected to fail, but didn't${RESET}\n ${Log.RequestLog(request, RED)}")), recMap, newLogs)
 
     case Model.AssertTrue(m, cond, condStr) =>
       if cond then
@@ -40,7 +41,7 @@ private def eval[R, B](
         (Result.Success(m), recMap, newLogs)
       else
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to false")
-        (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
+        (Result.Failure(AssertionError(s"${RED}The condition \"${condStr}\" is false${RESET}")), recMap, newLogs)
 
     case Model.YieldValue(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
@@ -82,7 +83,7 @@ private def eval[R, B](
           eval(m, recMap, backend, recCounter, newLogs)
         case None =>
           val newLogs = logs :+ Log.GeneralLog(s"Could not loop back to model with recVar: \"${recVar}\"")
-          (Result.Failure(GeneralError(s"Internal error. See logs for more details.")), recMap, newLogs)
+          (Result.Failure(GeneralError(s"${RED}Internal error. See logs for more details.${RESET}")), recMap, newLogs)
 
 @scala.annotation.tailrec
 private def evalT[R, B](
@@ -96,30 +97,30 @@ private def evalT[R, B](
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request  = req(())
+      val request    = req(())
       val requestLog = Log.RequestLog(request)
-      val newLogs  = logs :+ requestLog
-      val response = request.send(backend)
+      val newLogs    = logs :+ requestLog
+      val response   = request.send(backend)
       response.body match
         case Right(_) =>
           if (conts.isEmpty)
             (Result.Success(response.asInstanceOf[R]), recMap, newLogs)
           else
             evalT(conts(0)(response), recMap, backend, recCounter, newLogs, conts.drop(1))
-        case Left(x) => (Result.Failure(RequestError(s"Request failed with exception: ${x}.\n ${requestLog}")), recMap, newLogs)
+        case Left(x) => (Result.Failure(RequestError(s"${RED}Request failed with exception: ${x}.${RESET}\n ${Log.RequestLog(request, RED)}")), recMap, newLogs)
 
     case Model.FailedRequest(req) =>
-      val request  = req(())
+      val request    = req(())
       val requestLog = Log.RequestLog(request)
-      val newLogs  = logs :+ requestLog
-      val response = request.send(backend)
+      val newLogs    = logs :+ requestLog
+      val response   = request.send(backend)
       response.body match
         case Left(_) =>
           if (conts.isEmpty)
             (Result.Success(response.asInstanceOf[R]), recMap, newLogs)
           else
             evalT(conts(0)(response), recMap, backend, recCounter, newLogs, conts.drop(1))
-        case Right(_) => (Result.Failure(RequestError(s"Request was expected to fail, but didn't\n ${requestLog}")), recMap, newLogs)
+        case Right(_) => (Result.Failure(RequestError(s"${RED}Request was expected to fail, but didn't${RESET}\n ${Log.RequestLog(request, RED)}")), recMap, newLogs)
 
     case Model.AssertTrue(m, cond, condStr) =>
       if (cond)
@@ -130,7 +131,7 @@ private def evalT[R, B](
           evalT(conts(0)(m), recMap, backend, recCounter, newLogs, conts.drop(1))
       else
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to false")
-        (Result.Failure(AssertionError(s"The condition \"${condStr}\" is false ")), recMap, newLogs)
+        (Result.Failure(AssertionError(s"${RED}The condition \"${condStr}\" is false${RESET}")), recMap, newLogs)
 
     case Model.YieldValue(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue Model with value : \"${v()}\"")
@@ -172,4 +173,4 @@ private def evalT[R, B](
           evalT(m, recMap, backend, recCounter, newLogs, conts)
         case None =>
           val newLogs = logs :+ Log.GeneralLog(s"Could not loop back to model with recVar: \"${recVar}\"")
-          (Result.Failure(GeneralError(s"Internal error. See logs for more details.")), recMap, newLogs)
+          (Result.Failure(GeneralError(s"${RED}Internal error. See logs for more details.${RESET}")), recMap, newLogs)
