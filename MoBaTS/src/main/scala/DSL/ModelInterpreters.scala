@@ -18,7 +18,7 @@ private def eval[R, B](
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request    = req(())
+      val request    = req()
       val requestLog = Log.RequestLog(request)
       val newLogs    = logs :+ requestLog
       val response   = request.send(backend)
@@ -27,7 +27,7 @@ private def eval[R, B](
         case Left(x)  => (Result.Failure(RequestError(s"${RED}Request failed with exception: ${x}.${RESET}\n ${Log.RequestLog(request, RED)}\n")), recMap, newLogs)
 
     case Model.FailedRequest(f) =>
-      val request    = f(())
+      val request    = f()
       val requestLog = Log.RequestLog(request)
       val newLogs    = logs :+ requestLog
       val response   = request.send(backend)
@@ -97,7 +97,7 @@ private def evalT[R, B](
   model match
     // BASE CASES
     case Model.Request(req) =>
-      val request    = req(())
+      val request    = req()
       val requestLog = Log.RequestLog(request)
       val newLogs    = logs :+ requestLog
       val response   = request.send(backend)
@@ -110,7 +110,7 @@ private def evalT[R, B](
         case Left(x) => (Result.Failure(RequestError(s"${RED}Request failed with exception: ${x}.${RESET}\n ${Log.RequestLog(request, RED)}")), recMap, newLogs)
 
     case Model.FailedRequest(req) =>
-      val request    = req(())
+      val request    = req()
       val requestLog = Log.RequestLog(request)
       val newLogs    = logs :+ requestLog
       val response   = request.send(backend)
