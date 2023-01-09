@@ -13,12 +13,6 @@ enum Log:
     case RecursionLog(recVar, recVars) => s"Recursion variable ID: ${recVars}\nCurrent variable set: ${recVars}"
     case GeneralLog(msg)               => msg
 
-sealed trait Error(msg: String)
-case class RequestError(msg: String)   extends Error(msg: String)
-case class CodeError(msg: String)      extends Error(msg: String)
-case class AssertionError(msg: String) extends Error(msg: String)
-case class GeneralError(msg: String)   extends Error(msg: String)
-
 private def underlineString(str: String, color: String = ""): String = s"${RESET}${color}${UNDERLINED}${str}${RESET}"
 
 private def prettyPrintRequest[X, R](request: RequestT[Identity, Either[X, R], Any], color: String): String =

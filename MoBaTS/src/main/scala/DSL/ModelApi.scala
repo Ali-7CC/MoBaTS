@@ -4,7 +4,7 @@ import Graph.*
 import sttp.client3.{RequestT, Identity, Response, SttpBackend, HttpURLConnectionBackend}
 import Console.{RED, RESET}
 
-def request[R, X](req: => RequestT[Identity, Either[X, R], Any]): Model[Response[Either[X, R]], RequestError] = Model.Request(() => req)
+def request[O, X](req: => RequestT[Identity, Either[X, O], Any]): Model[Response[Either[X, O]], RequestError] = Model.Request(() => req)
 def request[R, X](req: => RequestT[Identity, Either[X, R], Any], code: String): Model[R, Error] =
   request(req) >> { response =>
     if (response.code.toString == code)
@@ -13,7 +13,7 @@ def request[R, X](req: => RequestT[Identity, Either[X, R], Any], code: String): 
       error(CodeError(s"${RED}Expected code ${code}, got ${response.code.toString}${RESET}"))
   }
 
-def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any]): Model[Response[Either[R, X]], RequestError] = Model.FailedRequest(() => req)
+def failedRequest[O, X](req: => RequestT[Identity, Either[O, X], Any]): Model[Response[Either[O, X]], RequestError] = Model.FailedRequest(() => req)
 def failedRequest[R, X](req: => RequestT[Identity, Either[R, X], Any], code: String): Model[R, Error] =
   failedRequest(req) >> { response =>
     if (response.code.toString == code)

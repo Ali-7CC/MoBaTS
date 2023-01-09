@@ -5,7 +5,7 @@ import DSL.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 
-inline def settsTest = rec { x =>
+inline def settsModel = rec { x =>
   choose(
     ownerApiTest(x),
     petApiTest(x),

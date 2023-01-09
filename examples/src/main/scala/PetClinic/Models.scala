@@ -6,7 +6,7 @@ import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 import java.time.LocalDate
 
-inline def modelA =
+inline def modelA = 
   request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
     rec { x =>
       choose(
