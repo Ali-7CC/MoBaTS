@@ -33,7 +33,6 @@ def choose[R](ms: => Model[R, Error]*): Model[R, Error] =
 
 def rec(recVarToM: RecVar => Model[Unit, Error]) = Model.Rec(recVarToM)
 def loop(recVar: RecVar)                         = Model.Loop(recVar)
-def endLoop()                                    = Model.EndLoop()
 def error[R, E](err: => E): Model[R, E]          = Model.Error(() => err)
 def yieldValue[R, E](v: => R): Model[R, E]       = Model.YieldValue(() => v)
 

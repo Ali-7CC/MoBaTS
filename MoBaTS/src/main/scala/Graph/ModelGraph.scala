@@ -72,8 +72,6 @@ private def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr
       val mg: ModelGraph = Set((startNode, s"loop(${recVarStr})", loopNode))
       (mg, Set.empty)
 
-    case '{ endLoop() } => (Set.empty, Set(startNode))
-
     case '{
           choose(${ Varargs[Model[R, Error]](es) }: _*)
         } =>

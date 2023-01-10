@@ -6,6 +6,21 @@ import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 import java.time.LocalDate
 
+
+val ownerApiModel = 
+  request(OwnerApi().addOwner(ownerFields1), "201") >> { owner => 
+    rec { x => 
+      choose(
+        request(OwnerApi().updateOwner(owner.id.get, ownerFields2), "204") >> { _ => loop(x)},
+
+        request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner =>
+              assertTrue(retrievedOwner, owner.id.get == retrievedOwner.id.get) >> { _ => loop(x)}},
+            
+        request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue(())})
+      }
+    } 
+
+
 inline def modelA = 
   request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
     rec { x =>
@@ -15,13 +30,13 @@ inline def modelA =
             assertTrue(retrievedOwner, retrievedOwner.firstName != owner.firstName) >> { _ => loop(x)}}},
 
         request(OwnerApi().listOwners(Some(owner.lastName)), "200") >> { owners =>
-          assertTrue(owners, owners.exists(o => o.lastName == "Doe")) >> { _ => endLoop()}},
+          assertTrue(owners, owners.exists(o => o.lastName == "Doe")) >> { _ => yieldValue(())}},
 
         request(OwnerApi().getOwner(owner.id.get), "200") >> { rOwner =>
           if rOwner.firstName == "John" then
             loop(x) 
           else 
-            request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => endLoop() }})}}
+            request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue(()) }})}}
 
 
 inline def modelB = request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
@@ -38,4 +53,4 @@ inline def modelB = request(OwnerApi().addOwner(ownerFields1), "201") >> { owner
           }
         ) >> { updatedPet =>
           assertTrue(updatedPet, updatedPet.name == "Fluffy") >> { _ =>
-            choose(loop(x), request(PetApi().deletePet(pet.id), "204") >> { _ => endLoop() })}}}}}}
+            choose(loop(x), request(PetApi().deletePet(pet.id), "204") >> { _ => yieldValue(()) })}}}}}}

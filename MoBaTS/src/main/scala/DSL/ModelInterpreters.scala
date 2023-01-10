@@ -47,10 +47,6 @@ private def eval[R, B](
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
 
-    case Model.EndLoop() =>
-      val newLogs = logs :+ Log.GeneralLog("EndLoop (recursion exited])")
-      (Result.Success(()), recMap, newLogs)
-
     case Model.Error(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error model with value : \"${v()}\"")
       (Result.Failure(v()), recMap, newLogs)
@@ -139,10 +135,6 @@ private def evalT[R, B](
         (Result.Success(v().asInstanceOf[R]), recMap, newLogs)
       else
         evalT(conts(0)(v()), recMap, backend, recCounter, newLogs, conts.drop(1))
-
-    case Model.EndLoop() =>
-      val newLogs = logs :+ Log.GeneralLog("EndLoop (recursion exited])")
-      (Result.Success(().asInstanceOf[R]), recMap, newLogs)
 
     case Model.Error(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error Model with value : \"${v()}\"")

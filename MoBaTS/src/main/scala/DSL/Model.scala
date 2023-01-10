@@ -15,7 +15,6 @@ enum Model[+R, +E]:
   case Choose[R, E](models: Seq[() => Model[R, E]])                             extends Model[R, E]
   case Rec(recVar: RecVar => Model[Unit, E])                                    extends Model[Unit, E]
   case Loop(recVar: RecVar)                                                     extends Model[Unit, E]
-  case EndLoop()                                                                extends Model[Unit, E]
   case Error[R, E](err: () => E)                                                extends Model[R, E]
   case YieldValue[R, E](v: () => R)                                             extends Model[R, E]
   def >>[R2, E2 >: E](cont: R => Model[R2, E2]): Model[R2, E2] = Model.Sequence(this, cont)

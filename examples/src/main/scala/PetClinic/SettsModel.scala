@@ -108,6 +108,6 @@ inline def specialtyApiTest(x: RecVar) =
               failedRequest(SpecialtyApi().updateSpecialty(specialty.id, specialty2), "404") >> { _ =>
                 failedRequest(SpecialtyApi().deleteSpecialty(specialty.id), "404") >> { _ => loop(x) }}}}}}}}
 
-inline def failingApiTest = failedRequest(FailingApi().failingRequest(), "404") >> { _ => endLoop() }
+inline def failingApiTest = failedRequest(FailingApi().failingRequest(), "404") >> { _ => yieldValue(()) }
 
 inline def userApiTest(x: RecVar) = request(UserApi().addUser(user1), "201") >> { _ => loop(x) }
