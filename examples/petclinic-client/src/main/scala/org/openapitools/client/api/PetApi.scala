@@ -80,7 +80,7 @@ class PetApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found.)
    *   code 500 : RestError (Server error.)
-   *   code 0 :  (default description)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param petId The ID of the pet.
    */
@@ -165,7 +165,7 @@ class PetApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found for this owner.)
    *   code 500 : RestError (Server error.)
-   *   code 0 :  (default description)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param ownerId The ID of the pet owner.
    * @param petId The ID of the pet.
@@ -190,7 +190,7 @@ class PetApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet not found.)
    *   code 500 : RestError (Server error.)
-   *   code 0 :  (default description)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param petId The ID of the pet.
    * @param pet The pet

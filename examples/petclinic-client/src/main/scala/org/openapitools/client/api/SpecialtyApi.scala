@@ -52,24 +52,23 @@ class SpecialtyApi(baseUrl: String) {
    * Returns the specialty or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Specialty (Specialty details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Specialty not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param specialtyId The ID of the specialty.
    */
   def deleteSpecialty(specialtyId: Int
-): Request[Either[ResponseException[String, Exception], Specialty], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.DELETE, uri"$baseUrl/specialties/${specialtyId}")
       .contentType("application/json")
-      .response(asJson[Specialty])
+      .response(asEither(asString, ignore))
 
   /**
    * Returns the specialty or a 404 error.
@@ -117,25 +116,24 @@ class SpecialtyApi(baseUrl: String) {
    * Returns the specialty or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Specialty (Specialty details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Specialty not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param specialtyId The ID of the specialty.
    * @param specialty The pet
    */
   def updateSpecialty(specialtyId: Int, specialty: Specialty
-): Request[Either[ResponseException[String, Exception], Specialty], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.PUT, uri"$baseUrl/specialties/${specialtyId}")
       .contentType("application/json")
       .body(specialty)
-      .response(asJson[Specialty])
+      .response(asEither(asString, ignore))
 
 }

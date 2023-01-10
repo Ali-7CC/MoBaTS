@@ -206,10 +206,10 @@ paths:
               $ref: '#/components/schemas/OwnerFields'
         required: true
       responses:
+        default:
+          description: Unexpected error.
         204:
           description: Update successful.
-        default:
-          description: default description
         400:
           description: Bad request.
           content:
@@ -246,10 +246,10 @@ paths:
             minimum: 0
             example: 1
       responses:
+        default:
+          description: Unexpected error.
         204:
           description: Update successful.
-        default:
-          description: default description
         304:
           description: Not modified.
           headers:
@@ -421,10 +421,10 @@ paths:
               $ref: '#/components/schemas/PetFields'
         required: true
       responses:
+        default:
+          description: Unexpected error.
         204:
           description: Update successful.
-        default:
-          description: default description
         400:
           description: Bad request.
           content:
@@ -663,17 +663,10 @@ paths:
               $ref: '#/components/schemas/PetType'
         required: true
       responses:
-        200:
-          description: Pet type details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PetType'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -716,17 +709,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Pet type details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PetType'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -915,10 +901,10 @@ paths:
               $ref: '#/components/schemas/Pet'
         required: true
       responses:
+        default:
+          description: Unexpected error.
         204:
           description: Update successful.
-        default:
-          description: default description
         304:
           description: Not modified.
           headers:
@@ -961,10 +947,10 @@ paths:
             minimum: 0
             example: 1
       responses:
+        default:
+          description: Unexpected error.
         204:
           description: Update successful.
-        default:
-          description: default description
         304:
           description: Not modified.
           headers:
@@ -1152,17 +1138,10 @@ paths:
               $ref: '#/components/schemas/Visit'
         required: true
       responses:
-        200:
-          description: Visit details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Visit'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -1205,17 +1184,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Visit details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Visit'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -1403,17 +1375,10 @@ paths:
               $ref: '#/components/schemas/Specialty'
         required: true
       responses:
-        200:
-          description: Specialty details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Specialty'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -1456,17 +1421,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Specialty details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Specialty'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -1655,17 +1613,10 @@ paths:
               $ref: '#/components/schemas/Vet'
         required: true
       responses:
-        200:
-          description: Pet type details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vet'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:
@@ -1708,17 +1659,10 @@ paths:
             minimum: 0
             example: 1
       responses:
-        200:
-          description: Vet details found and returned.
-          headers:
-            ETag:
-              description: An ID for this version of the response.
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Vet'
+        default:
+          description: Unexpected error.
+        204:
+          description: Update successful.
         304:
           description: Not modified.
           headers:

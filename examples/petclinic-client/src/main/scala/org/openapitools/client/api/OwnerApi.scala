@@ -54,7 +54,7 @@ class OwnerApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Owner  not found.)
    *   code 500 : RestError (Server error.)
-   *   code 0 :  (default description)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param ownerId The ID of the owner.
    */
@@ -117,7 +117,7 @@ class OwnerApi(baseUrl: String) {
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Owner not found.)
    *   code 500 : RestError (Server error.)
-   *   code 0 :  (default description)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param ownerId The ID of the pet owner.
    * @param ownerFields The pet owner details to use for the update.

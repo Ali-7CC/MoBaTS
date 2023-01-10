@@ -52,24 +52,23 @@ class PettypesApi(baseUrl: String) {
    * Returns the pet type or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : PetType (Pet type details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet type not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param petTypeId The ID of the pet type.
    */
   def deletePetType(petTypeId: Int
-): Request[Either[ResponseException[String, Exception], PetType], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.DELETE, uri"$baseUrl/pettypes/${petTypeId}")
       .contentType("application/json")
-      .response(asJson[PetType])
+      .response(asEither(asString, ignore))
 
   /**
    * Returns the pet type or a 404 error.
@@ -117,25 +116,24 @@ class PettypesApi(baseUrl: String) {
    * Returns the pet type or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : PetType (Pet type details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Pet Type not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param petTypeId The ID of the pet type.
    * @param petType The pet type
    */
   def updatePetType(petTypeId: Int, petType: PetType
-): Request[Either[ResponseException[String, Exception], PetType], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.PUT, uri"$baseUrl/pettypes/${petTypeId}")
       .contentType("application/json")
       .body(petType)
-      .response(asJson[PetType])
+      .response(asEither(asString, ignore))
 
 }

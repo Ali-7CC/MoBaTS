@@ -74,24 +74,23 @@ class VisitApi(baseUrl: String) {
    * Returns the visit or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Visit (Visit details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Visit not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param visitId The ID of the visit.
    */
   def deleteVisit(visitId: Int
-): Request[Either[ResponseException[String, Exception], Visit], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.DELETE, uri"$baseUrl/visits/${visitId}")
       .contentType("application/json")
-      .response(asJson[Visit])
+      .response(asEither(asString, ignore))
 
   /**
    * Returns the visit or a 404 error.
@@ -139,25 +138,24 @@ class VisitApi(baseUrl: String) {
    * Returns the visit or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Visit (Visit details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Visit not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param visitId The ID of the visit.
    * @param visit The visit
    */
   def updateVisit(visitId: Int, visit: Visit
-): Request[Either[ResponseException[String, Exception], Visit], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.PUT, uri"$baseUrl/visits/${visitId}")
       .contentType("application/json")
       .body(visit)
-      .response(asJson[Visit])
+      .response(asEither(asString, ignore))
 
 }

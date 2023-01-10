@@ -12,7 +12,6 @@
 package org.openapitools.client.api
 
 import org.openapitools.client.model.RestError
-import org.openapitools.client.model.Vet
 import org.openapitools.client.core.JsonSupport._
 import sttp.client3._
 import sttp.model.Method
@@ -28,23 +27,22 @@ class VetsApi(baseUrl: String) {
    * Returns the vet or a 404 error.
    * 
    * Expected answers:
-   *   code 200 : Vet (Vet details found and returned.)
-   *              Headers :
-   *                ETag - An ID for this version of the response.
+   *   code 204 :  (Update successful.)
    *   code 304 :  (Not modified.)
    *              Headers :
    *                ETag - An ID for this version of the response.
    *   code 400 : RestError (Bad request.)
    *   code 404 : RestError (Vet not found.)
    *   code 500 : RestError (Server error.)
+   *   code 0 :  (Unexpected error.)
    * 
    * @param vetId The ID of the vet.
    */
   def deleteVet(vetId: Int
-): Request[Either[ResponseException[String, Exception], Vet], Any] =
+): Request[Either[Either[String, String], Unit], Any] =
     basicRequest
       .method(Method.DELETE, uri"$baseUrl/vets/${vetId}")
       .contentType("application/json")
-      .response(asJson[Vet])
+      .response(asEither(asString, ignore))
 
 }
