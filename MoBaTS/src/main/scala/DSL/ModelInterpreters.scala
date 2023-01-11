@@ -4,11 +4,11 @@ import sttp.client3.{RequestT, Identity, Response, SttpBackend, HttpURLConnectio
 import scala.util.Random
 import Console.{RED, RESET}
 
-enum Result[R, E]:
+enum Result[R, E <: Error]:
   case Success(value: R)
   case Failure(value: E)
 
-private def eval[R, B](
+private def eval[R](
   model: Model[R, Error],
   recMap: Map[RecVar, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
@@ -47,7 +47,7 @@ private def eval[R, B](
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
 
-    case Model.Error(v) =>
+    case Model.YieldError(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error model with value : \"${v()}\"")
       (Result.Failure(v()), recMap, newLogs)
 
@@ -82,7 +82,7 @@ private def eval[R, B](
           (Result.Failure(GeneralError(s"${RED}Internal error. See logs for more details.${RESET}")), recMap, newLogs)
 
 @scala.annotation.tailrec
-private def evalT[R, B](
+private def evalT[R](
   model: Model[Any, Error],
   recMap: Map[RecVar, Model[Unit, Error]],
   backend: SttpBackend[Identity, Any],
@@ -136,7 +136,7 @@ private def evalT[R, B](
       else
         evalT(conts(0)(v()), recMap, backend, recCounter, newLogs, conts.drop(1))
 
-    case Model.Error(v) =>
+    case Model.YieldError(v) =>
       val newLogs = logs :+ Log.GeneralLog(s"Error Model with value : \"${v()}\"")
       (Result.Failure(v()), recMap, newLogs)
 

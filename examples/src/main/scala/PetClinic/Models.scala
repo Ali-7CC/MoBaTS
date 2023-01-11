@@ -16,10 +16,7 @@ val ownerApiModel =
         request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner =>
               assertTrue(retrievedOwner, owner.id.get == retrievedOwner.id.get) >> { _ => loop(x)}},
             
-        request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue(())})
-      }
-    } 
-
+        request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue((()))})}}
 
 inline def modelA = 
   request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
