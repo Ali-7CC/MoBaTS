@@ -31,10 +31,10 @@ def choose[R](ms: => Model[R, Error]*): Model[R, Error] =
   val models = ms.map(m => () => m)
   Model.Choose(models)
 
-def rec(recVarToM: RecVar => Model[Unit, Error]) = Model.Rec(recVarToM)
-def loop(recVar: RecVar)                         = Model.Loop(recVar)
-def error[R, E](err: => E): Model[R, E]          = Model.Error(() => err)
-def yieldValue[R, E](v: => R): Model[R, E]       = Model.YieldValue(() => v)
+def rec(recVarToM: RecVar => Model[Unit, Error])     = Model.Rec(recVarToM)
+def loop(recVar: RecVar)                             = Model.Loop(recVar)
+private def error[R](err: => Error): Model[R, Error] = Model.Error(() => err)
+def yieldValue[R](v: => R): Model[R, Error]          = Model.YieldValue(() => v)
 
 def run[R](model: Model[R, Error]): Result[R, Error] =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
@@ -55,7 +55,7 @@ def debugT[R, B](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[U
   evalT[R, B](model.asInstanceOf[Model[Any, Error]], Map.empty, backend, 0, Seq.empty, Seq.empty)
 
 // Graphing
-inline def toMg[R, E](inline model: Model[R, E]): ModelGraph = modelToGraph[R, E](model)
+inline def toMg[R](inline model: Model[R, Error]): ModelGraph = modelToGraph[R](model)
 
 private def edgeToGraphviz(edge: Edge): String =
   edge match

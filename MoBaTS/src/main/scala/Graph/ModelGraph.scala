@@ -9,26 +9,26 @@ type Node       = Int
 type Edge       = (Node, String, Node)
 type ModelGraph = Set[Edge]
 
-inline def modelToGraph[R, E](inline model: Model[R, E]): ModelGraph = ${ modelToGraphImpl[R, E]('{ model }) }
+inline def modelToGraph[R](inline model: Model[R, Error]): ModelGraph = ${ modelToGraphImpl[R, Error]('{ model }) }
 
-private def modelToGraphImpl[R: Type, E: Type](modelExpr: Expr[Model[R, E]])(using Quotes): Expr[ModelGraph] =
-  val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R, E](0, modelExpr, 1, Map.empty)
+private def modelToGraphImpl[R: Type, E: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[ModelGraph] =
+  val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R](0, modelExpr, 1, Map.empty)
   Expr(res._1)
 
-private def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr[Model[R, E]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
+private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R, Error]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
   import quotes.reflect.*
   modelExpr match
     case '{ yieldValue($_) } => (Set.empty, Set(startNode))
 
     case '{
           type r2
-          ($model: Model[`r2`, E]) >> ($cont: `r2` => Model[R, E])
+          ($model: Model[`r2`, Error]) >> ($cont: `r2` => Model[R, Error])
         } =>
       val (firstMg, firstExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(startNode, model, endNode, recMap)
       val contEntryNode: Node                                = if (firstExitNodes.size <= 1) then firstExitNodes.max else mgMaxNode(firstMg) + 1
       val contEndNode: Node                                  = if (firstExitNodes.size <= 1) then mgMaxNode(firstMg) + 1 else contEntryNode + 1
       val connectors: ModelGraph                             = if (firstExitNodes.size <= 1) then Set.empty else firstExitNodes.map(n => (n, "", mgMaxNode(firstMg) + 1))
-      val (contMg, contExitNodes): (ModelGraph, Set[Node])   = modelToGraphImpl2[R, E](contEntryNode, contToExpr[`r2`, R, E](cont), contEndNode, recMap)
+      val (contMg, contExitNodes): (ModelGraph, Set[Node])   = modelToGraphImpl2[R](contEntryNode, contToExpr[`r2`, R](cont), contEndNode, recMap)
       (firstMg union connectors union contMg, contExitNodes)
 
     case '{
@@ -85,7 +85,7 @@ private def modelToGraphImpl2[R: Type, E: Type](startNode: Node, modelExpr: Expr
       (mg, exitNodes)
 
     case '{
-          val condStr: String = $x; $body(condStr): Model[R, E]
+          val condStr: String = $x; $body(condStr): Model[R, Error]
         } =>
       val mg: ModelGraph = Set((startNode, s"AssertTrue: ${x.valueOrAbort}", endNode))
       (mg, Set(endNode))
@@ -112,7 +112,7 @@ private def mgMaxNode(mg: ModelGraph): Int = mg match
   case mg if mg.size < 1 => 0
   case _                 => mg.map((a, b, c) => a.max(c)).max
 
-private def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using Quotes): (String, Expr[Model[Unit, E]]) =
+private def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, Error]])(using Quotes): (String, Expr[Model[Unit, Error]]) =
   import quotes.reflect.*
   val tree: Term = cont.asTerm
   val (param, contBody) = tree match
@@ -121,10 +121,10 @@ private def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, E]])(using 
   val contTerm = contBody match
     case Block(_, expr) => expr
     case _              => throw new MatchError("Could not parse continuation body" + tree.show(using Printer.TreeStructure))
-  val contExpr: Expr[Model[Unit, E]] = contTerm.asExprOf[Model[Unit, E]]
+  val contExpr: Expr[Model[Unit, Error]] = contTerm.asExprOf[Model[Unit, Error]]
   (param, contExpr)
 
-private def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]])(using Quotes): Expr[Model[R, E]] =
+private def contToExpr[R2: Type, R: Type](cont: Expr[R2 => Model[R, Error]])(using Quotes): Expr[Model[R, Error]] =
   import quotes.reflect.*
   val tree: Term = cont.asTerm
   val contBody = tree match
@@ -133,7 +133,7 @@ private def contToExpr[R2: Type, R: Type, E: Type](cont: Expr[R2 => Model[R, E]]
   val contTerm = contBody match
     case Block(_, expr) => expr
     case _              => throw new MatchError("Could not parse continuation body" + tree.show(using Printer.TreeStructure))
-  val contExpr: Expr[Model[R, E]] = contTerm.asExprOf[Model[R, E]]
+  val contExpr: Expr[Model[R, Error]] = contTerm.asExprOf[Model[R, Error]]
   contExpr
 
 private def parseRequest[X: Type, R: Type](request: Expr[RequestT[Identity, Either[X, R], Any]])(using Quotes): (String, String) =
