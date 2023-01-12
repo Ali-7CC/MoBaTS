@@ -10,7 +10,7 @@ import sttp.client3.{RequestT, Identity, Response}
  */
 enum Model[+R, +E <: Error]:
   case Request[X, S, E <: Error](req: () => RequestT[Identity, Either[X, S], Any])                  extends Model[Response[Either[X, S]], E]
-  case FailedRequest[X, V, E <: Error](req: () => RequestT[Identity, Either[V, X], Any])            extends Model[Response[Either[V, X]], E]
+  case FailedRequest[X, S, E <: Error](req: () => RequestT[Identity, Either[S, X], Any])            extends Model[Response[Either[S, X]], E]
   case Sequence[R, R2, E <: Error, E2 <: Error](firstModel: Model[R2, E2], cont: R2 => Model[R, E]) extends Model[R, E]
   case AssertTrue[R, E <: Error](data: R, cond: Boolean, condStr: String)                           extends Model[R, E]
   case Choose[R, E <: Error](models: Seq[() => Model[R, E]])                                        extends Model[R, E]
