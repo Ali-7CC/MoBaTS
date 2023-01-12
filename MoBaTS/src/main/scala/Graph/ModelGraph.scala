@@ -73,7 +73,7 @@ private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R,
       (mg, Set.empty)
 
     case '{
-          choose(${ Varargs[Model[R, Error]](es) }: _*)
+           choose(${Varargs(es)}: _*): Model[R, Error]
         } =>
       val i: Tuple2[ModelGraph, Set[Node]] = (Set.empty, Set.empty)
       val (mg, exitNodes) = es.foldRight(i) { (expr, acc) =>

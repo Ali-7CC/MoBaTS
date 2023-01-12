@@ -29,8 +29,8 @@ class PetClinicTests extends AnyFunSuite with BeforeAndAfter:
     assert(result == expected)
   }
   test("'toMg' should handle choice (branching)") {
-    val result   = toMg(choose(addThenGet, listOwners))
-    val expected = Set((5, "?200", 6), (4, "!OwnerApi.getOwner", 5), (0, "!OwnerApi.listOwners", 1), (3, "?201", 4), (0, "!OwnerApi.addOwner", 3), (1, "?200", 2))
+    val result   = toMg(choose(addThenGet, addOwner))
+    val expected =  Set((0, "!OwnerApi.addOwner", 1), (5, "?200", 6), (4, "!OwnerApi.getOwner", 5), (1, "?201", 2), (3, "?201", 4), (0, "!OwnerApi.addOwner", 3))
     assert(result == expected)
   }
 
