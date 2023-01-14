@@ -32,10 +32,10 @@ def choose[R](ms: => Model[R, Error]*): Model[R, Error] =
   val models = ms.map(m => () => m)
   Model.Choose(models)
 
-def rec(recVarToM: RecVar => Model[Unit, Error])          = Model.Rec(recVarToM)
-def loop(recVar: RecVar)                                  = Model.Loop(recVar)
-def yieldValue[R](v: => R): Model[R, Error]               = Model.YieldValue(() => v)
-private def yieldError[R](err: => Error): Model[R, Error] = Model.YieldError(() => err)
+def rec(recVarToM: RecVar => Model[Unit, Error])                = Model.Rec(recVarToM)
+def loop(recVar: RecVar)                                        = Model.Loop(recVar)
+def yieldValue[R](v: => R): Model[R, Nothing]                   = Model.YieldValue(() => v)
+private def yieldError[R](err: => Error): Model[Nothing, Error] = Model.YieldError(() => err)
 
 def run[R](model: Model[R, Error]): Result[R, Error] =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()

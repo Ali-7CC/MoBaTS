@@ -16,8 +16,8 @@ enum Model[+R, +E <: Error]:
   case Choose[R, E <: Error](models: Seq[() => Model[R, E]])                                        extends Model[R, E]
   case Rec(recVar: RecVar => Model[Unit, E])                                                        extends Model[Unit, E]
   case Loop(recVar: RecVar)                                                                         extends Model[Unit, E]
-  case YieldValue[R, E <: Error](v: () => R)                                                        extends Model[R, E]
-  case YieldError[R, E <: Error](err: () => E)                                                      extends Model[R, E]
+  case YieldValue[R, E <: Error](v: () => R)                                                        extends Model[R, Nothing]
+  case YieldError[R, E <: Error](err: () => E)                                                      extends Model[Nothing, E]
   def >>[R2, E2 <: Error](cont: R => Model[R2, E2]): Model[R2, E2] = Model.Sequence(this, cont)
 
 sealed trait Error(msg: String)
