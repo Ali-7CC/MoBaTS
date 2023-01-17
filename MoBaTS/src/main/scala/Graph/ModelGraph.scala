@@ -9,27 +9,37 @@ type Node       = Int
 type Edge       = (Node, String, Node)
 type ModelGraph = Set[Edge]
 
-inline def modelToGraph[R](inline model: Model[R, Error]): ModelGraph = ${ modelToGraphImpl[R, Error]('{ model }) }
+inline def modelToGraph[R](inline model: Model[R, Error]): ModelGraph = ${ modelToGraphImpl[R]('{ model }) }
 
-private def modelToGraphImpl[R: Type, E: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[ModelGraph] =
+private def modelToGraphImpl[R: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[ModelGraph] =
   val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R](0, modelExpr, 1, Map.empty)
   Expr(res._1)
 
-private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R, Error]], endNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
+private def modelToGraphImpl2[R: Type](sourceNode: Node, modelExpr: Expr[Model[R, Error]], targetNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
   import quotes.reflect.*
   modelExpr match
-    case '{ yieldValue($_) } => (Set.empty, Set(startNode))
+    case '{ yieldValue($_) } => (Set.empty, Set(sourceNode))
 
     case '{
           type r2
           ($model: Model[`r2`, Error]) >> ($cont: `r2` => Model[R, Error])
         } =>
-      val (firstMg, firstExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(startNode, model, endNode, recMap)
-      val contEntryNode: Node                                = if (firstExitNodes.size <= 1) then firstExitNodes.max else mgMaxNode(firstMg) + 1
-      val contEndNode: Node                                  = if (firstExitNodes.size <= 1) then mgMaxNode(firstMg) + 1 else contEntryNode + 1
-      val connectors: ModelGraph                             = if (firstExitNodes.size <= 1) then Set.empty else firstExitNodes.map(n => (n, "", mgMaxNode(firstMg) + 1))
-      val (contMg, contExitNodes): (ModelGraph, Set[Node])   = modelToGraphImpl2[R](contEntryNode, contToExpr[`r2`, R](cont), contEndNode, recMap)
-      (firstMg union connectors union contMg, contExitNodes)
+      val (firstMg, firstExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(sourceNode, model, targetNode, recMap)
+      firstExitNodes match
+        case exitNodes if exitNodes.isEmpty => report.errorAndAbort("Incorrect model. Check for infinite loops.")
+        case exitNodes if exitNodes.size == 1 =>
+          val contEntryNode  = exitNodes.max
+          val contTargetNode = mgMaxNode(firstMg) + 1
+          val (contMg, contExitNodes): (ModelGraph, Set[Node]) =
+            modelToGraphImpl2[R](contEntryNode, contToExpr[`r2`, R](cont), contTargetNode, recMap)
+          (firstMg union contMg, contExitNodes)
+        case exitNodes =>
+          val contEntryNode  = mgMaxNode(firstMg) + 1
+          val contTargetNode = contEntryNode + 1
+          val connectorMg    = exitNodes.map(n => (n, "", contEntryNode))
+          val (contMg, contExitNodes): (ModelGraph, Set[Node]) =
+            modelToGraphImpl2[R](contEntryNode, contToExpr[`r2`, R](cont), contTargetNode, recMap)
+          (firstMg union connectorMg union contMg, contExitNodes)
 
     case '{
           type x
@@ -37,17 +47,17 @@ private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R,
           request($f: RequestT[Identity, Either[`x`, `r2`], Any]): Model[Response[Either[`x`, `r2`]], RequestError]
         } =>
       val (api, endpoint) = parseRequest[`x`, `r2`](f)
-      val mg: ModelGraph  = Set((startNode, s"!${api}.${endpoint}", endNode))
-      (mg, Set(endNode))
+      val mg: ModelGraph  = Set((sourceNode, s"!${api}.${endpoint}", targetNode))
+      (mg, Set(targetNode))
 
     case '{
           type x
-          type r2
-          request($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
+          request($req: RequestT[Identity, Either[`x`, R], Any], $code: String)
         } =>
-      val (api, endpoint) = parseRequest[`x`, `r2`](f)
-      val mg: ModelGraph  = Set((startNode, s"!${api}.${endpoint}", endNode), ((endNode, s"?${code.valueOrAbort}", endNode + 1)))
-      (mg, Set(endNode + 1))
+      val (api, endpoint) = parseRequest[`x`, R](req)
+      val mg: ModelGraph  = Set((sourceNode, s"!${api}.${endpoint}", targetNode), 
+                            ((targetNode, s"?${code.valueOrAbort}", targetNode + 1)))
+      (mg, Set(targetNode + 1))
 
     case '{
           type x
@@ -55,29 +65,29 @@ private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R,
           failedRequest($f: RequestT[Identity, Either[`x`, `r2`], Any], $code: String)
         } =>
       val (api, endpoint) = parseRequest[`x`, `r2`](f)
-      val mg: ModelGraph  = Set((startNode, s"!${api}.${endpoint}", endNode), ((endNode, s"?${code.valueOrAbort}", endNode + 1)))
-      (mg, Set(endNode + 1))
+      val mg: ModelGraph  = Set((sourceNode, s"!${api}.${endpoint}", targetNode), ((targetNode, s"?${code.valueOrAbort}", targetNode + 1)))
+      (mg, Set(targetNode + 1))
 
     case '{ rec($recVarToM: RecVar => Model[Unit, Error]) } =>
       val (recVarStr, mExpr) = parseRecVarToM(recVarToM)
       if recMap.contains(recVarStr) then report.errorAndAbort(s"Recursion variable ${recVarStr} is already used. Please use a unique recursion variable.")
-      val mg1              = Set((startNode, s"rec(${recVarStr})", endNode))
-      val newRecMap        = recMap + (recVarStr -> (endNode))
-      val (mg2, exitNodes) = modelToGraphImpl2(endNode, mExpr, endNode + 1, newRecMap)
+      val mg1              = Set((sourceNode, s"rec(${recVarStr})", targetNode))
+      val newRecMap        = recMap + (recVarStr -> (targetNode))
+      val (mg2, exitNodes) = modelToGraphImpl2(targetNode, mExpr, targetNode + 1, newRecMap)
       (mg1 union mg2, exitNodes)
 
     case '{ loop($recVar: RecVar) } =>
       val recVarStr      = recVarToStr(recVar)
       val loopNode       = recMap.get(recVarStr).get
-      val mg: ModelGraph = Set((startNode, s"loop(${recVarStr})", loopNode))
+      val mg: ModelGraph = Set((sourceNode, s"loop(${recVarStr})", loopNode))
       (mg, Set.empty)
 
     case '{
-           choose(${Varargs(es)}: _*): Model[R, Error]
+          choose(${ Varargs(es) }: _*): Model[R, Error]
         } =>
       val i: Tuple2[ModelGraph, Set[Node]] = (Set.empty, Set.empty)
       val (mg, exitNodes) = es.foldRight(i) { (expr, acc) =>
-        val res          = modelToGraphImpl2(startNode, expr, if acc._1.isEmpty then startNode + 1 else mgMaxNode(acc._1) + 1, recMap);
+        val res          = modelToGraphImpl2(sourceNode, expr, if acc._1.isEmpty then sourceNode + 1 else mgMaxNode(acc._1) + 1, recMap);
         val newMg        = res._1 union acc._1
         val newExitNodes = res._2 union acc._2;
         (newMg, newExitNodes)
@@ -87,15 +97,15 @@ private def modelToGraphImpl2[R: Type](startNode: Node, modelExpr: Expr[Model[R,
     case '{
           val condStr: String = $x; $body(condStr): Model[R, Error]
         } =>
-      val mg: ModelGraph = Set((startNode, s"AssertTrue: ${x.valueOrAbort}", endNode))
-      (mg, Set(endNode))
+      val mg: ModelGraph = Set((sourceNode, s"AssertTrue: ${x.valueOrAbort}", targetNode))
+      (mg, Set(targetNode))
 
     case '{
           if $cond then $thenBranch else $elseBranch
         } =>
-      val thenConnector: ModelGraph                        = Set((startNode, cond.show, endNode))
-      val (thenMg, thenExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(endNode, thenBranch, endNode + 1, recMap)
-      val elseConnector: ModelGraph                        = Set((startNode, s"¬(${cond.show})", mgMaxNode(thenMg) + 1))
+      val thenConnector: ModelGraph                        = Set((sourceNode, cond.show, targetNode))
+      val (thenMg, thenExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(targetNode, thenBranch, targetNode + 1, recMap)
+      val elseConnector: ModelGraph                        = Set((sourceNode, s"¬(${cond.show})", mgMaxNode(thenMg) + 1))
       val (elseMg, elseExitNodes): (ModelGraph, Set[Node]) = modelToGraphImpl2(mgMaxNode(thenMg) + 1, elseBranch, mgMaxNode(thenMg) + 2, recMap)
       (thenConnector union thenMg union elseConnector union elseMg, thenExitNodes union elseExitNodes)
 

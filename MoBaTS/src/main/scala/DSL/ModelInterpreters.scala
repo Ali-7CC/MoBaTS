@@ -35,10 +35,10 @@ private def eval[R](
         case Left(_)  => (Result.Success(response), recMap, newLogs)
         case Right(_) => (Result.Failure(RequestError(s"${RED}Request was expected to fail, but didn't${RESET}\n ${Log.RequestLog(request, RED)}")), recMap, newLogs)
 
-    case Model.AssertTrue(m, cond, condStr) =>
+    case Model.AssertTrue(data, cond, condStr) =>
       if cond then
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to true")
-        (Result.Success(m), recMap, newLogs)
+        (Result.Success(data), recMap, newLogs)
       else
         val newLogs = logs :+ Log.GeneralLog(s"The condition \"${condStr}\" was evaluated to false")
         (Result.Failure(AssertionError(s"${RED}The condition \"${condStr}\" is false${RESET}")), recMap, newLogs)
@@ -47,13 +47,13 @@ private def eval[R](
       val newLogs = logs :+ Log.GeneralLog(s"YieldValue model with value : \"${v()}\"")
       (Result.Success(v()), recMap, newLogs)
 
-    case Model.YieldError(v) =>
-      val newLogs = logs :+ Log.GeneralLog(s"Error model with value : \"${v()}\"")
-      (Result.Failure(v()), recMap, newLogs)
+    case Model.YieldError(err) =>
+      val newLogs = logs :+ Log.GeneralLog(s"Error model with value : \"${err()}\"")
+      (Result.Failure(err()), recMap, newLogs)
 
     // RECURSIVE CASES
-    case Model.Sequence(first, cont) =>
-      val (res, recs, newLogs) = eval(first, recMap, backend, recCounter, logs)
+    case Model.Sequence(firstModel, cont) =>
+      val (res, recs, newLogs) = eval(firstModel, recMap, backend, recCounter, logs)
       res match
         case Result.Success(v)   => eval(cont(v), recs, backend, recCounter, newLogs)
         case Result.Failure(err) => (Result.Failure(err), recs, newLogs)

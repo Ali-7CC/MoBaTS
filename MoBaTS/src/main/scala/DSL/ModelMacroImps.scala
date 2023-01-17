@@ -2,9 +2,9 @@ package DSL
 
 import scala.quoted.*
 
-def booleanToStringImpl(x: Expr[Any])(using Quotes): Expr[String] =
+def booleanToStringImpl(condExpr: Expr[Boolean])(using Quotes): Expr[String] =
   import quotes.reflect.*
-  Expr(x.asTerm.show(using Printer.TreeShortCode))
+  Expr(condExpr.asTerm.show(using Printer.TreeShortCode))
 
 def modelPrinterImpl[R: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[String] =
   import quotes.reflect.*

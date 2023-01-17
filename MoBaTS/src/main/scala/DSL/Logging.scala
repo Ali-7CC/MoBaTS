@@ -2,7 +2,6 @@ package DSL
 
 import Console.{RESET, UNDERLINED, RED}
 import sttp.client3.{RequestT, Identity}
-import scala.compiletime.ops.boolean
 
 enum Log:
   case RequestLog[X, R](request: RequestT[Identity, Either[X, R], Any], color: String = "")

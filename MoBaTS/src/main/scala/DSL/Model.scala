@@ -14,7 +14,7 @@ enum Model[+R, +E <: Error]:
   case Sequence[R, R2, E <: Error, E2 <: Error](firstModel: Model[R2, E2], cont: R2 => Model[R, E]) extends Model[R, E]
   case AssertTrue[R, E <: Error](data: R, cond: Boolean, condStr: String)                           extends Model[R, E]
   case Choose[R, E <: Error](models: Seq[() => Model[R, E]])                                        extends Model[R, E]
-  case Rec(recVar: RecVar => Model[Unit, E])                                                        extends Model[Unit, E]
+  case Rec(recVarToM: RecVar => Model[Unit, E])                                                     extends Model[Unit, E]
   case Loop(recVar: RecVar)                                                                         extends Model[Unit, E]
   case YieldValue[R, E <: Error](v: () => R)                                                        extends Model[R, Nothing]
   case YieldError[R, E <: Error](err: () => E)                                                      extends Model[Nothing, E]
