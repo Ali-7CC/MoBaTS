@@ -37,24 +37,24 @@ def loop(recVar: RecVar): Model[Unit, Error]                         = Model.Loo
 def yieldValue[R](v: => R): Model[R, Nothing]                        = Model.YieldValue(() => v)
 private def yieldError(err: => Error): Model[Nothing, Error]         = Model.YieldError(() => err)
 
+// Model interpreters API
 def run[R](model: Model[R, Error]): Result[R, Error] =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
   val (res, recs, logs)                   = eval(model, Map.empty, backend, 0, Seq.empty)
   res
 
-// Model interpreters API
 def debug[R](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
   eval(model, Map.empty, backend, 0, Seq.empty)
 
 def runT[R](model: Model[R, Error]): Result[R, Error] =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
-  val (res, recs, logs)                   = evalT[R](model.asInstanceOf[Model[Any, Error]], Map.empty, backend, 0, Seq.empty, Seq.empty)
+  val (res, recs, logs)                   = evalT[R](model, Map.empty, backend, 0, Seq.empty, Seq.empty)
   res
 
 def debugT[R](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
-  evalT[R](model.asInstanceOf[Model[Any, Error]], Map.empty, backend, 0, Seq.empty, Seq.empty)
+  evalT[R](model, Map.empty, backend, 0, Seq.empty, Seq.empty)
 
 // Graphing API
 inline def toMg[R](inline model: Model[R, Error]): ModelGraph = modelToGraph[R](model)

@@ -39,7 +39,7 @@ inline def petApiTest(x: RecVar) =
       request(PetApi().getPet(1), "200") >> { pet =>
         request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
           request(PetApi().addPetToOwner(owner.id.get, petFields1), "201") >> { createdPet =>
-            assertTrue(pets, pets.isEmpty) >> { _ =>
+            assertTrue(pets, !pets.isEmpty) >> { _ =>
               choose(
                 request(PetApi().getOwnersPet(owner.id.get, createdPet.id)) >> { ownersPet =>
                   assertTrue(ownersPet, ownersPet == createdPet) >> { _ => loop(x) }},

@@ -55,8 +55,7 @@ private def modelToGraphImpl2[R: Type](sourceNode: Node, modelExpr: Expr[Model[R
           request($req: RequestT[Identity, Either[`x`, R], Any], $code: String)
         } =>
       val (api, endpoint) = parseRequest[`x`, R](req)
-      val mg: ModelGraph  = Set((sourceNode, s"!${api}.${endpoint}", targetNode), 
-                            ((targetNode, s"?${code.valueOrAbort}", targetNode + 1)))
+      val mg: ModelGraph  = Set((sourceNode, s"!${api}.${endpoint}", targetNode), ((targetNode, s"?${code.valueOrAbort}", targetNode + 1)))
       (mg, Set(targetNode + 1))
 
     case '{
@@ -71,25 +70,25 @@ private def modelToGraphImpl2[R: Type](sourceNode: Node, modelExpr: Expr[Model[R
     case '{ rec($recVarToM: RecVar => Model[Unit, Error]) } =>
       val (recVarStr, mExpr) = parseRecVarToM(recVarToM)
       if recMap.contains(recVarStr) then report.errorAndAbort(s"Recursion variable ${recVarStr} is already used. Please use a unique recursion variable.")
-      val mg1              = Set((sourceNode, s"rec(${recVarStr})", targetNode))
       val newRecMap        = recMap + (recVarStr -> (targetNode))
+      val mg1              = Set((sourceNode, s"rec(${recVarStr})", targetNode))
       val (mg2, exitNodes) = modelToGraphImpl2(targetNode, mExpr, targetNode + 1, newRecMap)
       (mg1 union mg2, exitNodes)
 
     case '{ loop($recVar: RecVar) } =>
       val recVarStr      = recVarToStr(recVar)
       val loopNode       = recMap.get(recVarStr).get
-      val mg: ModelGraph = Set((sourceNode, s"loop(${recVarStr})", loopNode))
+      val mg             = Set((sourceNode, s"loop(${recVarStr})", loopNode))
       (mg, Set.empty)
 
     case '{
-          choose(${ Varargs(es) }: _*): Model[R, Error]
+          choose(${Varargs(es)}: _*): Model[R, Error]
         } =>
       val i: Tuple2[ModelGraph, Set[Node]] = (Set.empty, Set.empty)
       val (mg, exitNodes) = es.foldRight(i) { (expr, acc) =>
-        val res          = modelToGraphImpl2(sourceNode, expr, if acc._1.isEmpty then sourceNode + 1 else mgMaxNode(acc._1) + 1, recMap);
+        val res          = modelToGraphImpl2(sourceNode, expr, if acc._1.isEmpty then targetNode else mgMaxNode(acc._1) + 1, recMap)
         val newMg        = res._1 union acc._1
-        val newExitNodes = res._2 union acc._2;
+        val newExitNodes = res._2 union acc._2
         (newMg, newExitNodes)
       }
       (mg, exitNodes)
@@ -122,17 +121,17 @@ private def mgMaxNode(mg: ModelGraph): Int = mg match
   case mg if mg.size < 1 => 0
   case _                 => mg.map((a, b, c) => a.max(c)).max
 
-private def parseRecVarToM[E: Type](cont: Expr[RecVar => Model[Unit, Error]])(using Quotes): (String, Expr[Model[Unit, Error]]) =
+private def parseRecVarToM[E: Type](recVarToM: Expr[RecVar => Model[Unit, Error]])(using Quotes): (String, Expr[Model[Unit, Error]]) =
   import quotes.reflect.*
-  val tree: Term = cont.asTerm
-  val (param, contBody) = tree match
-    case Block(List(DefDef(_, List(TermParamClause(List(ValDef(param, _, _)))), _, Some(block))), _) => (param, block)
+  val tree: Term = recVarToM.asTerm
+  val (recVarStr, contBody) = tree match
+    case Block(List(DefDef(_, List(TermParamClause(List(ValDef(recVarStr, _, _)))), _, Some(block))), _) => (recVarStr, block)
     case _                                                                                           => throw new MatchError("Could not parse continuation block" + tree.show(using Printer.TreeStructure))
   val contTerm = contBody match
     case Block(_, expr) => expr
     case _              => throw new MatchError("Could not parse continuation body" + tree.show(using Printer.TreeStructure))
   val contExpr: Expr[Model[Unit, Error]] = contTerm.asExprOf[Model[Unit, Error]]
-  (param, contExpr)
+  (recVarStr, contExpr)
 
 private def contToExpr[R2: Type, R: Type](cont: Expr[R2 => Model[R, Error]])(using Quotes): Expr[Model[R, Error]] =
   import quotes.reflect.*
