@@ -5,7 +5,7 @@ import DSL.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 
-inline def settsModel = rec { x =>
+inline def petClinicTest = rec { x =>
   choose(
     ownerApiTest(x),
     petApiTest(x),
@@ -27,7 +27,7 @@ inline def ownerApiTest(x: RecVar) =
               assertTrue(updatedOwner, owners.contains(updatedOwner)) >> { _ =>
                 request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ =>
                   failedRequest(OwnerApi().getOwner(owner.id.get), "404") >> { _ =>
-                    failedRequest(OwnerApi().updateOwner(owner.id.get, ownerFields1), "404") >> { _ =>
+                    failedRequest(OwnerApi().updateOwner(owner.id.get, ownerFields2), "404") >> { _ =>
                       failedRequest(OwnerApi().deleteOwner(owner.id.get), "404") >> { _ => loop(x) }}}}}}}}}}}
 
 
@@ -76,14 +76,14 @@ inline def vetApiTest(x: RecVar) =
             request(VetApi().listVets(), "200") >> { vets =>
                 assertTrue(vet, vets.contains(vet)) >> { _ => loop(x) }},
 
-            request(VetApi().updateVet(vet.id, vet2), "204") >> { _ =>
-            request(VetApi().getVet(vet.id), "200") >> { updatedVet =>
+            request(VetApi().getVet(vet.id), "200") >> { vet =>
+              request(VetApi().updateVet(vet.id, vet2), "204") >> { updatedVet =>
                 request(VetApi().listVets(), "200") >> { vets =>
-                assertTrue(updatedVet, vets.contains(updatedVet)) >> { _ =>
+                  assertTrue(updatedVet, vets.contains(updatedVet)) >> { _ =>
                     request(VetsApi().deleteVet(vet.id), "204") >> { _ =>
-                    failedRequest(VetApi().getVet(vet.id), "404") >> { _ =>
+                      failedRequest(VetApi().getVet(vet.id), "404") >> { _ =>
                         failedRequest(VetApi().updateVet(vet.id, vet2), "404") >> { _ =>
-                        failedRequest(VetsApi().deleteVet(vet.id), "404") >> { _ => loop(x) }}}}}}}})}
+                          failedRequest(VetsApi().deleteVet(vet.id), "404") >> { _ => loop(x) }}}}}}}})}
 
 
 inline def petTypeApiTest(x: RecVar) =
