@@ -9,10 +9,22 @@ type Node       = Int
 type Edge       = (Node, String, Node)
 type ModelGraph = Set[Edge]
 
+// User-facing macro
 inline def modelToGraph[R](inline model: Model[R, Error]): ModelGraph = ${ modelToGraphImpl[R]('{ model }) }
+
+// Converting model graph to Graphvis string
+def mgToGraphvizStr(mg: ModelGraph): String =
+  "digraph finite_state_machine {\n" +
+    "rankdir=T;\n" +
+    "size=\"200\"\n" +
+    "node [shape = circle];\n" +
+    edgesToGraphviz(mg) +
+    "}"
+
 
 private def modelToGraphImpl[R: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[ModelGraph] =
   val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R](0, modelExpr, 1, Map.empty)
+  println(res._2)
   Expr(res._1)
 
 private def modelToGraphImpl2[R: Type](sourceNode: Node, modelExpr: Expr[Model[R, Error]], targetNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
@@ -152,3 +164,13 @@ private def parseRequest[X: Type, R: Type](request: Expr[RequestT[Identity, Eith
     case Apply(Select(Apply(Select(Ident(api), "apply"), _), endpoint), _)                               => (api, endpoint)
     case Block(List(ValDef(_, _, Some(Apply(Select(Ident(api), _), _)))), Apply(Select(_, endpoint), _)) => (api, endpoint)
     case _                                                                                               => throw new MatchError("Could not parse request tree:\n" + requestTree.show(using Printer.TreeStructure))
+
+private def edgeToGraphviz(edge: Edge): String =
+  edge match
+    case (s, label, e) => s"${s} -> ${e} [ label = \"${label.replaceAll("\"", "")}\"];"
+
+private def edgesToGraphviz(mg: ModelGraph): String =
+  mg.toList match
+    case Nil         => ""
+    case (e :: rest) => s"${edgeToGraphviz(e)}\n${edgesToGraphviz(rest.toSet)}"
+

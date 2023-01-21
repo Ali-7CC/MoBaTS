@@ -55,23 +55,3 @@ def runT[R](model: Model[R, Error]): Result[R, Error] =
 def debugT[R](model: Model[R, Error]): (Result[R, Error], Map[RecVar, Model[Unit, Error]], Seq[Log]) =
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
   evalT[R](model, Map.empty, backend, 0, Seq.empty, Seq.empty)
-
-// Graphing API
-inline def toMg[R](inline model: Model[R, Error]): ModelGraph = modelToGraph[R](model)
-
-private def edgeToGraphviz(edge: Edge): String =
-  edge match
-    case (s, label, e) => s"${s} -> ${e} [ label = \"${label.replaceAll("\"", "")}\"];"
-
-private def edgesToGraphviz(mg: ModelGraph): String =
-  mg.toList match
-    case Nil         => ""
-    case (e :: rest) => s"${edgeToGraphviz(e)}\n${edgesToGraphviz(rest.toSet)}"
-
-def mgToGraphvizStr(mg: ModelGraph): String =
-  "digraph finite_state_machine {\n" +
-    "rankdir=T;\n" +
-    "size=\"200\"\n" +
-    "node [shape = circle];\n" +
-    edgesToGraphviz(mg) +
-    "}"
