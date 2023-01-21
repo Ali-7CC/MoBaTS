@@ -4,11 +4,10 @@ import DSL.*
 import Graph.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
-import java.time.LocalDate
-import DSL.Result.Success.apply
+
 
 @main def main: Unit =
-  // Chosen model    
+  // Chosen model (some examples available in Models.scala)
   inline def model = ownerApiModel
 
   // Graphing the model
