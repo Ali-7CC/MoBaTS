@@ -24,7 +24,6 @@ def mgToGraphvizStr(mg: ModelGraph): String =
 
 private def modelToGraphImpl[R: Type](modelExpr: Expr[Model[R, Error]])(using Quotes): Expr[ModelGraph] =
   val res: Tuple2[ModelGraph, Set[Node]] = modelToGraphImpl2[R](0, modelExpr, 1, Map.empty)
-  println(res._2)
   Expr(res._1)
 
 private def modelToGraphImpl2[R: Type](sourceNode: Node, modelExpr: Expr[Model[R, Error]], targetNode: Node, recMap: Map[String, Int])(using Quotes): Tuple2[ModelGraph, Set[Node]] =
