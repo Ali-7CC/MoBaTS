@@ -5,21 +5,22 @@ import DSL.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 
-// SeTTS PetClinic model written in MoBaTS
-inline def petClinicTest = rec { x =>
+// SeTTS PetClinic model written in MoBaTS, however with random generators
+inline def updatedPetClinicTest = rec { x =>
   choose(
-    ownerApiTest(x),
-    petApiTest(x),
-    vetApiTest(x),
-    petTypeApiTest(x),
-    specialtyApiTest(x),
-    userApiTest(x),
-    failingApiTest
+    updatedOwnerApiTest(x),
+    updatedPetApiTest(x),
+    updatedVetApiTest(x),
+    updatedPetTypeApiTest(x),
+    updatedSpecialtyApiTest(x),
+    updatedUserApiTest(x),
+    updatedFailingApiTest
   )
 }
 
-inline def ownerApiTest(x: RecVar) =
-  request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
+
+inline def updatedOwnerApiTest(x: RecVar) =
+  request(OwnerApi().addOwner(generateRandomOwnerFields()), "201") >> { owner =>
     request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner =>
       assertTrue(retrievedOwner, retrievedOwner.id.get == owner.id.get) >> { _ =>
         request(OwnerApi().updateOwner(owner.id.get, ownerFields2), "204") >> { _ =>
@@ -32,14 +33,14 @@ inline def ownerApiTest(x: RecVar) =
                       failedRequest(OwnerApi().deleteOwner(owner.id.get), "404") >> { _ => loop(x) }}}}}}}}}}}
 
 
-inline def petApiTest(x: RecVar) =
+inline def updatedPetApiTest(x: RecVar) =
   request(PetApi().listPets(), "200") >> { pets =>
     choose(
-      request(PetApi().addPet(pet1), "200") >> { _ => loop(x) },
+      request(PetApi().addPet(generateRandomPet()), "200") >> { _ => loop(x) },
 
-      request(PetApi().getPet(1), "200") >> { pet =>
-        request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
-          request(PetApi().addPetToOwner(owner.id.get, petFields1), "201") >> { createdPet =>
+      request(PetApi().getPet(getSomePetId.get), "200") >> { pet =>
+        request(OwnerApi().addOwner(generateRandomOwnerFields()), "201") >> { owner =>
+          request(PetApi().addPetToOwner(owner.id.get, generateRandomPetFields()), "201") >> { createdPet =>
             assertTrue(pets, !pets.isEmpty) >> { _ =>
               choose(
                 request(PetApi().getOwnersPet(owner.id.get, createdPet.id)) >> { ownersPet =>
@@ -54,7 +55,7 @@ inline def petApiTest(x: RecVar) =
                             failedRequest(PetApi().deletePet(createdPet.id), "404") >> { _ =>
                               request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => loop(x) }}}}}}}},
 
-                request(VisitApi().addVisitToOwner(owner.id.get, pet.id, visitFields1), "201") >> { visit =>
+                request(VisitApi().addVisitToOwner(owner.id.get, pet.id, generateRandomVisitFields()), "201") >> { visit =>
                   request(VisitApi().getVisit(visit.id), "200") >> { retrievedVisit =>
                     assertTrue(retrievedVisit, visit == retrievedVisit) >> { _ =>
                       request(VisitApi().updateVisit(visit.id, visit2), "204") >> { _ =>
@@ -65,14 +66,14 @@ inline def petApiTest(x: RecVar) =
                                 failedRequest(VisitApi().deleteVisit(visit.id), "404") >> { _ =>
                                   request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => loop(x) }}}}}}}}}})}}}},
 
-      request(VisitApi().addVisit(visit1), "201") >> { visit =>
+      request(VisitApi().addVisit(generateRandomVisit()), "201") >> { visit =>
         request(VisitApi().getVisit(visit.id), "200") >> { retrievedVisit =>
           assertTrue(retrievedVisit, retrievedVisit == visit) >> { _ => loop(x) }}})}
 
 
 
-inline def vetApiTest(x: RecVar) = 
-    request(VetApi().addVet(vet1), "201") >> { vet =>
+inline def updatedVetApiTest(x: RecVar) = 
+    request(VetApi().addVet(generateRandomVet()), "201") >> { vet =>
         choose(
             request(VetApi().listVets(), "200") >> { vets =>
                 assertTrue(vet, vets.contains(vet)) >> { _ => loop(x) }},
@@ -87,8 +88,8 @@ inline def vetApiTest(x: RecVar) =
                           failedRequest(VetsApi().deleteVet(vet.id), "404") >> { _ => loop(x) }}}}}}}})}
 
 
-inline def petTypeApiTest(x: RecVar) =
-  request(PettypesApi().addPetType(petType1), "201") >> { petType =>
+inline def updatedPetTypeApiTest(x: RecVar) =
+  request(PettypesApi().addPetType(generateRandomPetType()), "201") >> { petType =>
     request(PettypesApi().listPetTypes(), "200") >> { petTypes =>
       request(PettypesApi().getPetType(petType.id), "200") >> { retrievedPetType =>
         assertTrue(retrievedPetType, petType == retrievedPetType) >> { _ =>
@@ -99,8 +100,8 @@ inline def petTypeApiTest(x: RecVar) =
                   failedRequest(PettypesApi().deletePetType(petType.id), "404") >> { _ => loop(x) }}}}}}}}}
 
 
-inline def specialtyApiTest(x: RecVar) =
-  request(SpecialtyApi().addSpecialty(specialty1), "201") >> { specialty =>
+inline def updatedSpecialtyApiTest(x: RecVar) =
+  request(SpecialtyApi().addSpecialty(generateRandomSpecialty()), "201") >> { specialty =>
     request(SpecialtyApi().listSpecialties(), "200") >> { specialties =>
       assertTrue(specialty, specialties.contains(specialty)) >> {_ => 
         request(SpecialtyApi().updateSpecialty(specialty.id, specialty2), "204") >> { _ =>
@@ -110,6 +111,6 @@ inline def specialtyApiTest(x: RecVar) =
                 failedRequest(SpecialtyApi().updateSpecialty(specialty.id, specialty2), "404") >> { _ =>
                   failedRequest(SpecialtyApi().deleteSpecialty(specialty.id), "404") >> { _ => loop(x) }}}}}}}}}
 
-inline def failingApiTest = failedRequest(FailingApi().failingRequest(), "404") >> { _ => yieldValue(()) }
+inline def updatedFailingApiTest = failedRequest(FailingApi().failingRequest(), "404") >> { _ => yieldValue(()) }
 
-inline def userApiTest(x: RecVar) = request(UserApi().addUser(user1), "201") >> { _ => loop(x) }
+inline def updatedUserApiTest(x: RecVar) = request(UserApi().addUser(user1), "201") >> { _ => loop(x) }

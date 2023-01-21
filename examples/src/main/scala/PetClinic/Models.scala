@@ -4,10 +4,10 @@ import DSL.*
 
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
-import java.time.LocalDate
 
 
-val ownerApiModel = 
+// The ownerApiModel
+inline def ownerApiModel = 
   request(OwnerApi().addOwner(ownerFields1), "201") >> { owner => 
     rec { x => 
       choose(
@@ -18,6 +18,46 @@ val ownerApiModel =
             
         request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue((()))})}}
 
+
+// Showcasing model composition
+inline def addPetToOwner = 
+  request(OwnerApi().addOwner(ownerFields1), "201") >> {owner => 
+    request(PetApi().addPetToOwner(owner.id.get, petFields1), "201")}
+
+inline def ownerApiModel2 =  ownerApiModel >> {_ => addPetToOwner}
+
+
+// Showcasing model parameterization
+inline def ownerApiTests(x: RecVar) = 
+  request(OwnerApi().addOwner(ownerFields1), "201") >> {owner =>
+    choose(
+      request(OwnerApi().updateOwner(owner.id.get, ownerFields2), "204") >> { _ => loop(x)},
+
+      request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner =>
+        assertTrue(retrievedOwner, owner.id.get == retrievedOwner.id.get) >> { _ => loop(x)}},
+
+      request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue((()))}
+    )}
+
+
+inline def petClinicTests = rec {x => 
+  choose(
+    ownerApiTests(x),
+    yieldValue(())
+  )}
+
+  
+// Non-regular model. Cannot be graphed!
+inline def addOwner(ownerFields: OwnerFields): Model[Owner, Error] =  request(OwnerApi().addOwner(ownerFields), "201")
+inline def deleteOwner(ownerId: Int):  Model[Unit, Error]  = request(OwnerApi().deleteOwner(ownerId), "204")
+
+def nonRegularModel(): Model[Unit, Error] = rec {x => 
+  choose(
+    addOwner(ownerFields1) >> {owner => nonRegularModel() >> {_ => deleteOwner(owner.id.get)}},
+    yieldValue(()))}
+
+
+// Additional models that showcase the DSL features
 inline def modelA = 
   request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
     rec { x =>
@@ -35,7 +75,7 @@ inline def modelA =
           else 
             request(OwnerApi().deleteOwner(owner.id.get), "204") >> { _ => yieldValue(()) }})}}
 
-
+// Has a failing branch
 inline def modelB = request(OwnerApi().addOwner(ownerFields1), "201") >> { owner =>
   rec { x =>
     request(PetApi().addPetToOwner(owner.id.get, petFields1), "201") >> { pet =>
@@ -49,5 +89,5 @@ inline def modelB = request(OwnerApi().addOwner(ownerFields1), "201") >> { owner
             request(PetApi().getPet(pet.id), "200")
           }
         ) >> { updatedPet =>
-          assertTrue(updatedPet, updatedPet.name == "Fluffy") >> { _ =>
+          assertTrue(updatedPet, updatedPet.name == "UpdatedPetName") >> { _ =>
             choose(loop(x), request(PetApi().deletePet(pet.id), "204") >> { _ => yieldValue(()) })}}}}}}
