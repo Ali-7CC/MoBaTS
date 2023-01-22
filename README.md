@@ -10,7 +10,6 @@ MoBaTS was developed as a part of my Master thesis Jan 2023.
 ---
 ## Requirements
 - Java 11
-- maven
 - sbt (1.8)
 - Scala 3
 
