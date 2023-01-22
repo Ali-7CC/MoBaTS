@@ -3,7 +3,6 @@ package Graph
 import DSL.*
 import scala.quoted.*
 import sttp.client3.{RequestT, Identity, Response}
-import scala.util.matching.Regex
 
 type Node       = Int
 type Edge       = (Node, String, Node)
