@@ -5,6 +5,16 @@ import DSL.*
 import org.openapitools.client.api.*
 import org.openapitools.client.model.*
 
+// Model from defense
+inline def presentationModel = 
+  request(OwnerApi().addOwner(ownerFields1), "201") >> { owner => 
+    rec { x => 
+      choose(
+        request(OwnerApi().updateOwner(owner.id.get, ownerFields2), "204") >> { _ => loop(x)},
+
+        request(OwnerApi().getOwner(owner.id.get), "200") >> { retrievedOwner =>
+              assertTrue(retrievedOwner, owner.id.get == retrievedOwner.id.get) >> { _ => yieldValue(())}})}}
+      
 
 // The ownerApiModel
 inline def ownerApiModel = 
@@ -91,3 +101,17 @@ inline def modelB = request(OwnerApi().addOwner(ownerFields1), "201") >> { owner
         ) >> { updatedPet =>
           assertTrue(updatedPet, updatedPet.name == "UpdatedPetName") >> { _ =>
             choose(loop(x), request(PetApi().deletePet(pet.id), "204") >> { _ => yieldValue(()) })}}}}}}
+
+// Bad model: Infinite loop
+inline def badModel = rec {x => 
+choose(
+  request(OwnerApi().getOwner(12), "200") >> {_ => loop(x)},
+  request(OwnerApi().listOwners(), "201") >> {_ => loop(x)}
+)} >> {_ => request(OwnerApi().getOwner(12), "200") }
+
+
+// Bad model: Type Any
+inline def badModel2 = choose(
+  request(OwnerApi().getOwner(12), "200"),
+  request(OwnerApi().listOwners(), "201")
+)

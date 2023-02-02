@@ -8,7 +8,7 @@ import org.openapitools.client.model.*
 
 @main def main: Unit =
   // Chosen model (some examples available in Models.scala)
-  inline def model = ownerApiModel
+  inline def model = presentationModel
 
   // Graphing the model
   val mg = modelToGraph(model)
@@ -16,25 +16,25 @@ import org.openapitools.client.model.*
   println(s"Graphvis string:\n\n${graphvizStr}")
 
   // Running the model
-  println(run(model))
+  // println(run(model))
 
   // Running the test in debug mode (verbose logs:)
-  // val output = debug(model)
-  // output match
-  //   case (Result.Success(value), _, logs) =>
-  //     println("Successful run with value:")
-  //     println(value)
-  //     println("Log stack:")
-  //     for log <- logs do
-  //       println(log)
-  //       println("----------------")
-  //   case (Result.Failure(error), _, logs) =>
-  //     println("Failed run with error:")
-  //     println(error)
-  //     println("Log trace:")
-  //     for log <- logs do
-  //       println(log)
-  //       println("----------------")
+  val output = debug(model)
+  output match
+    case (Result.Success(value), _, logs) =>
+      println("Successful run with value:")
+      println(value)
+      println("Log stack:")
+      for log <- logs do
+        println(log)
+        println("----------------")
+    case (Result.Failure(error), _, logs) =>
+      println("Failed run with error:")
+      println(error)
+      println("Log trace:")
+      for log <- logs do
+        println(log)
+        println("----------------")
 
 
   // Running the model n times, and printing all the errors
