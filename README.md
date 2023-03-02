@@ -5,7 +5,8 @@
 # MoBaTS (Model-based Test Synthesis)
 MoBaTS is an internal DSL written in Scala 3 for the model-based testing of RESTful APIs.
 
-MoBaTS was developed as a part of my Master thesis Jan 2023.
+MoBaTS was developed as a part of my Master thesis Jan 2023. You can access my thesis here:
+https://findit.dtu.dk/en/catalog/63f56b6068544291f7db1f99
 
 ---
 ## Requirements
